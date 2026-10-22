@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2815c0fe643f4350b9e84d70cfbffa0a
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 32
+  includeFontData: 1
+  fontNames: []
+  fallbackFontReferences: []
+  customBorderColor: {r: 0, g: 0, b: 0, a: 1}
+  fontRenderingMode: 0
+  ascentCalculationMode: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
