@@ -45,6 +45,7 @@ public class EnemyRebsamenAI : MonoBehaviour
     private bool isDefending = false;
     private Coroutine defenseRoutine;
     private int lastHealthRecorded;
+    private Vector3 baseScale;
 
     private void Awake()
     {
@@ -52,6 +53,7 @@ public class EnemyRebsamenAI : MonoBehaviour
         health = GetComponent<Health>();
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        baseScale = transform.localScale;
 
         if (rb != null)
         {
@@ -126,8 +128,8 @@ public class EnemyRebsamenAI : MonoBehaviour
             rb.linearVelocity = dir * moveSpeed;
 
             // Orientar sprite hacia el jugador
-            if (dir.x > 0.05f) transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, 1);
-            else if (dir.x < -0.05f) transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, 1);
+            if (dir.x > 0.05f) transform.localScale = new Vector3(Mathf.Abs(baseScale.x), baseScale.y, 1);
+            else if (dir.x < -0.05f) transform.localScale = new Vector3(-Mathf.Abs(baseScale.x), baseScale.y, 1);
         }
         else
         {
@@ -316,8 +318,8 @@ public class EnemyRebsamenAI : MonoBehaviour
     {
         if (playerTransform == null) return;
         float diffX = playerTransform.position.x - transform.position.x;
-        if (diffX > 0.05f) transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, 1);
-        else if (diffX < -0.05f) transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, 1);
+        if (diffX > 0.05f) transform.localScale = new Vector3(Mathf.Abs(baseScale.x), baseScale.y, 1);
+        else if (diffX < -0.05f) transform.localScale = new Vector3(-Mathf.Abs(baseScale.x), baseScale.y, 1);
     }
 
     private void HandleDeath()
