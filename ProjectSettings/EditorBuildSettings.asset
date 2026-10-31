@@ -15,6 +15,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Nivel_1_Calzada.unity
     guid: b5444595f98b4100a54397d237b8ceb5
   - enabled: 1
+    path: Assets/Scenes/Nivel_2_Cinepolis.unity
+    guid: a25b234a501c4f3390ff48349618f5f3
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   m_configObjects:
