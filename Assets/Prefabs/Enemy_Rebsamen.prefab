@@ -81,6 +81,7 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -119,7 +120,7 @@ Animator:
   m_WriteDefaultValuesOnDisable: 0
 --- !u!50 &1000000000000005
 Rigidbody2D:
-  serializedVersion: 4
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -130,8 +131,8 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -213,10 +214,10 @@ MonoBehaviour:
   kickRange: 1.65
   punchRange: 1.1
   attackCooldown: 1.3
-  kickDamage: 14
+  kickDamage: 10
   punchDamage: 8
   kickKnockback: 4.5
-  punchKnockback: 2.0
+  punchKnockback: 2
   playerLayer:
     serializedVersion: 2
     m_Bits: 64

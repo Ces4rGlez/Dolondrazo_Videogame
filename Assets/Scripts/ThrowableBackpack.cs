@@ -268,3 +268,4 @@ public class ThrowableBackpack : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, 1.2f);
     }
 }
+
