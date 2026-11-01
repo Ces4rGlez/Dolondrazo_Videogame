@@ -36,6 +36,12 @@ public class PlayerController : MonoBehaviour
     public bool IsCarryingItem { get; set; } = false;         // Posicion Y base del personaje
     private Coroutine jumpCoroutine;
 
+    [Header("Estado de Contusion")]
+    private bool isConcussed = false;
+    private float concussionTimer = 0f;
+    private GameObject activeStarsEffect;
+    public bool IsConcussed => isConcussed;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -57,6 +63,7 @@ public class PlayerController : MonoBehaviour
     private void HandlePlayerDeath()
     {
         isDead = true;
+        if (isConcussed) EndConcussion();
         rb.linearVelocity = Vector2.zero;
 
         // Cancelar salto si estaba en el aire
@@ -83,6 +90,12 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         if (isDead) return;
+
+        if (isConcussed)
+        {
+            UpdateConcussion();
+            return;
+        }
 
         var keyboard = Keyboard.current;
         if (keyboard == null) return;
@@ -143,7 +156,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (isDead)
+        if (isDead || isConcussed)
         {
             rb.linearVelocity = Vector2.zero;
             return;
@@ -253,6 +266,115 @@ public class PlayerController : MonoBehaviour
                 if (hitSound != null) AudioSource.PlayClipAtPoint(hitSound, transform.position, 1.0f);
             }
             Debug.Log($"Golpeaste a {enemy.name} haciendo {damage} de dano!");
+        }
+    }
+
+    /// <summary>
+    /// Aplica contusion (aturdimiento) a Fercho por una duracion determinada.
+    /// Fercho no puede moverse ni atacar, pero machacar botones acelera la recuperacion.
+    /// </summary>
+    public void ApplyConcussion(float duration = 2.0f)
+    {
+        if (isDead) return;
+        isConcussed = true;
+        concussionTimer = Mathf.Max(concussionTimer, duration);
+        rb.linearVelocity = Vector2.zero;
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", 0f);
+            animator.SetBool("IsRunning", false);
+            animator.SetTrigger("Hurt");
+        }
+        CreateOrShowConcussionStars();
+        Debug.Log($"[PlayerController] Fercho aturdido por {duration}s! Machaca botones para recuperarte.");
+    }
+
+    private void UpdateConcussion()
+    {
+        concussionTimer -= Time.deltaTime;
+
+        if (activeStarsEffect != null)
+        {
+            float wobble = Mathf.Sin(Time.time * 10f) * 12f;
+            float pulse = 1f + Mathf.PingPong(Time.time * 2.5f, 0.2f);
+            activeStarsEffect.transform.localRotation = Quaternion.Euler(0f, 0f, wobble);
+            activeStarsEffect.transform.localScale = new Vector3(pulse, pulse, 1f);
+        }
+
+        var keyboard = Keyboard.current;
+        var gamepad = Gamepad.current;
+        bool mashed = false;
+
+        if (keyboard != null)
+        {
+            if (keyboard.wKey.wasPressedThisFrame || keyboard.aKey.wasPressedThisFrame ||
+                keyboard.sKey.wasPressedThisFrame || keyboard.dKey.wasPressedThisFrame ||
+                keyboard.upArrowKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame ||
+                keyboard.leftArrowKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame ||
+                keyboard.spaceKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame ||
+                keyboard.kKey.wasPressedThisFrame || keyboard.eKey.wasPressedThisFrame)
+            {
+                mashed = true;
+            }
+        }
+
+        if (gamepad != null)
+        {
+            if (gamepad.buttonSouth.wasPressedThisFrame || gamepad.buttonWest.wasPressedThisFrame ||
+                gamepad.buttonNorth.wasPressedThisFrame || gamepad.buttonEast.wasPressedThisFrame)
+            {
+                mashed = true;
+            }
+        }
+
+        if (mashed)
+        {
+            concussionTimer -= 0.35f;
+            if (activeStarsEffect != null)
+            {
+                activeStarsEffect.transform.localScale = Vector3.one * 1.35f;
+            }
+        }
+
+        if (concussionTimer <= 0f)
+        {
+            EndConcussion();
+        }
+    }
+
+    private void CreateOrShowConcussionStars()
+    {
+        if (activeStarsEffect == null)
+        {
+            activeStarsEffect = new GameObject("Concussion_Stars");
+            activeStarsEffect.transform.SetParent(transform, false);
+            activeStarsEffect.transform.localPosition = new Vector3(0f, 1.75f, 0f);
+
+            TextMesh tm = activeStarsEffect.AddComponent<TextMesh>();
+            tm.text = "★ ★ ★";
+            tm.fontSize = 24;
+            tm.characterSize = 0.12f;
+            tm.alignment = TextAlignment.Center;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.color = new Color(1f, 0.85f, 0.1f, 1f);
+
+            MeshRenderer mr = activeStarsEffect.GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                mr.sortingLayerName = "Default";
+                mr.sortingOrder = 50;
+            }
+        }
+        activeStarsEffect.SetActive(true);
+    }
+
+    private void EndConcussion()
+    {
+        isConcussed = false;
+        concussionTimer = 0f;
+        if (activeStarsEffect != null)
+        {
+            activeStarsEffect.SetActive(false);
         }
     }
 

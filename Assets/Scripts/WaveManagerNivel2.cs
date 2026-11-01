@@ -241,8 +241,14 @@ public class WaveManagerNivel2 : MonoBehaviour
         }
         else
         {
-            yield return StartCoroutine(ShowBannerRoutine("¡SECTOR CINÉPOLIS COMPLETADO!", "La entrada a Paseo Dolores esta despejada", 3.0f));
-            Debug.Log("[WaveManagerNivel2] ¡Todas las oleadas del Nivel 2 completadas!");
+            // Todas las oleadas vencidas: ampliar camara al sector de la Jefa y mostrar banner
+            if (cameraFollow != null)
+            {
+                cameraFollow.SetLock(false);
+                cameraFollow.SetMaxX(36f);
+            }
+            yield return StartCoroutine(ShowBannerRoutine("\u00a1LIDERESA DEL R\u00c9BSAMEN!", "\u00a1Valentina bloquea la entrada principal!", 2.8f));
+            Debug.Log("[WaveManagerNivel2] \u00a1Oleadas completadas! Valentina aparece en escena.");
         }
     }
 
