@@ -252,7 +252,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec9a40685cb646598c12a4f7df1333ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossJefaCutscene
-  ferChoPortrait: {fileID: 0}
-  bossPortrait: {fileID: 0}
+  ferChoPortrait: {fileID: 177728572, guid: a104809e6c0eb354690d89b87cf4a5d8, type: 3}
+  bossPortrait: {fileID: 5866269944775405809, guid: 2c008ad10b5b59f4795749eb728a7bca, type: 3}
   ferChoColor: {r: 0.3, g: 0.75, b: 1, a: 1}
   bossColor: {r: 1, g: 0.35, b: 0.75, a: 1}

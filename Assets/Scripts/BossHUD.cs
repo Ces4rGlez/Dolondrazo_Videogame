@@ -108,8 +108,17 @@ public class BossHUD : MonoBehaviour
         while (true)
         {
             EnemyAI[] remainingEnemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+            EnemyRebsamenAI[] remainingRebsamen = FindObjectsByType<EnemyRebsamenAI>(FindObjectsSortMode.None);
             int aliveCount = 0;
             foreach (var enemy in remainingEnemies)
+            {
+                if (enemy != null && enemy.gameObject.activeInHierarchy)
+                {
+                    Health h = enemy.GetComponent<Health>();
+                    if (h != null && !h.IsDead) aliveCount++;
+                }
+            }
+            foreach (var enemy in remainingRebsamen)
             {
                 if (enemy != null && enemy.gameObject.activeInHierarchy)
                 {
@@ -171,41 +180,90 @@ public class BossHUD : MonoBehaviour
         Color ferChoColor = new Color(0.3f, 0.75f, 1f, 1f);
         Color narratorColor = new Color(0.85f, 0.85f, 0.95f, 1f);
 
-        var lines = new List<DialogueSystem.DialogueLine>
+        string activeSceneName = SceneManager.GetActiveScene().name;
+        bool isLevel2 = activeSceneName.Contains("2") || activeSceneName.Contains("Cinepolis");
+
+        // Intentar obtener portrait desde BossJefaCutscene si estamos en Nivel 2
+        if (ferChoPortrait == null)
         {
-            new DialogueSystem.DialogueLine
+            BossJefaCutscene bjc = FindFirstObjectByType<BossJefaCutscene>();
+            if (bjc != null)
             {
-                speakerName = "Fercho",
-                portrait    = ferChoPortrait,
-                nameColor   = ferChoColor,
-                text        = "!Uff... por poco! Ese tipo de taller casi me hace tirar la maqueta.",
-                typeSpeed   = 0.04f
-            },
-            new DialogueSystem.DialogueLine
-            {
-                speakerName = "Fercho",
-                portrait    = ferChoPortrait,
-                nameColor   = ferChoColor,
-                text        = "*mira su reloj* !No puede ser, se me acaba el tiempo! Apenas voy saliendo de la Calzada de los Heroes...",
-                typeSpeed   = 0.04f
-            },
-            new DialogueSystem.DialogueLine
-            {
-                speakerName = "Fercho",
-                portrait    = ferChoPortrait,
-                nameColor   = ferChoColor,
-                text        = "El transporte publico sigue totalmente detenido. Mi unica opcion es cruzar corriendo por el Jardin Principal hacia el CBTis 75.",
-                typeSpeed   = 0.04f
-            },
-            new DialogueSystem.DialogueLine
-            {
-                speakerName = "Narrador",
-                portrait    = null,
-                nameColor   = narratorColor,
-                text        = "!ACTO I COMPLETADO! Fercho avanza a toda velocidad rumbo al Centro de Dolores Hidalgo...",
-                typeSpeed   = 0.038f
+                var field = typeof(BossJefaCutscene).GetField("ferChoPortrait", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (field != null) ferChoPortrait = field.GetValue(bjc) as Sprite;
             }
-        };
+        }
+
+        List<DialogueSystem.DialogueLine> lines;
+
+        if (isLevel2)
+        {
+            lines = new List<DialogueSystem.DialogueLine>
+            {
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "¡Uff! Por poco me hace trizas la maqueta con esa patada. El Cinépolis ya quedó atrás... ¡Ahora directo al Centro de Dolores!",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "Valentina y sus amigos del Rébsamen no pudieron detenerme. ¡Pero el tiempo sigue corriendo en mi contra!",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Narrador",
+                    portrait    = null,
+                    nameColor   = narratorColor,
+                    text        = "¡ACTO II COMPLETADO! Fercho cruza Paseo Dolores rumbo al Centro Histórico...",
+                    typeSpeed   = 0.038f
+                }
+            };
+        }
+        else
+        {
+            lines = new List<DialogueSystem.DialogueLine>
+            {
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "!Uff... por poco! Ese tipo de taller casi me hace tirar la maqueta.",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "*mira su reloj* !No puede ser, se me acaba el tiempo! Apenas voy saliendo de la Calzada de los Heroes...",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "El transporte publico sigue totalmente detenido. Mi unica opcion es cruzar corriendo por el Jardin Principal hacia el CBTis 75.",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Narrador",
+                    portrait    = null,
+                    nameColor   = narratorColor,
+                    text        = "!ACTO I COMPLETADO! Fercho avanza a toda velocidad rumbo al Centro de Dolores Hidalgo...",
+                    typeSpeed   = 0.038f
+                }
+            };
+        }
 
         bool finished = false;
         DialogueSystem.Instance.PlayDialogue(lines, () => finished = true);
@@ -276,15 +334,19 @@ public class BossHUD : MonoBehaviour
         MakeBar(cardObj.transform, white, new Vector2(0f,1f), new Vector2(1f,1f), new Vector2(0.5f,1f),
                 Vector2.zero, new Vector2(0f, 6f), new Color(1f, 0.84f, 0f, 1f), "TopGold");
 
+        bool isLevel2Scene = SceneManager.GetActiveScene().name.Contains("2") || SceneManager.GetActiveScene().name.Contains("Cinepolis");
+        string clearTitle = isLevel2Scene ? "*** STAGE 2 CLEAR! ***" : "*** STAGE 1 CLEAR! ***";
+        string clearSub   = isLevel2Scene ? "CINÉPOLIS PASEO DOLORES - VALENTINA DERROTADA" : "CALZADA DE LOS HEROES - ALUMNO DE TALLER DERROTADO";
+
         // Titulo STAGE CLEAR
-        MakeText(cardObj.transform, "*** STAGE 1 CLEAR! ***",
+        MakeText(cardObj.transform, clearTitle,
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
                  new Vector2(0f, -25f), new Vector2(0f, 50f),
                  38, FontStyle.Bold, TextAnchor.MiddleCenter,
                  new Color(1f, 0.88f, 0.2f, 1f), "Text_Title");
 
         // Subtitulo Nivel y Jefe derrotado
-        MakeText(cardObj.transform, "CALZADA DE LOS HEROES - ALUMNO DE TALLER DERROTADO",
+        MakeText(cardObj.transform, clearSub,
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
                  new Vector2(0f, -75f), new Vector2(0f, 32f),
                  20, FontStyle.Bold, TextAnchor.MiddleCenter,
@@ -343,9 +405,10 @@ public class BossHUD : MonoBehaviour
         nextLevelStatusText.color = new Color(0.4f, 1f, 0.4f, 1f);
 
         // --- BOTONES INTERACTIVOS ---
-        // 1. Continuar al Nivel 2
+        // 1. Continuar al Siguiente Nivel
+        string nextBtnLabel = isLevel2Scene ? ">> NIVEL 3" : ">> NIVEL 2";
         MakeButton(cardObj.transform, white, new Vector2(-260f, -220f), new Vector2(230f, 65f),
-                   ">> NIVEL 2", new Color(0.15f, 0.65f, 0.35f, 1f), new Color(0.25f, 0.85f, 0.45f, 1f),
+                   nextBtnLabel, new Color(0.15f, 0.65f, 0.35f, 1f), new Color(0.25f, 0.85f, 0.45f, 1f),
                    "Btn_NextLevel", () =>
                    {
                        int nextIdx = SceneManager.GetActiveScene().buildIndex + 1;
@@ -358,7 +421,9 @@ public class BossHUD : MonoBehaviour
                        {
                            if (nextLevelStatusText != null)
                            {
-                               nextLevelStatusText.text = "!NIVEL 2 (EL CENTRO) EN DESARROLLO! !Has completado con exito el Acto 1!";
+                               nextLevelStatusText.text = isLevel2Scene
+                                   ? "¡NIVEL 3 EN DESARROLLO! ¡Has completado con éxito el Acto II!"
+                                   : "!NIVEL 2 (EL CENTRO) EN DESARROLLO! !Has completado con exito el Acto 1!";
                                nextLevelStatusText.color = new Color(1f, 0.85f, 0.2f, 1f);
                            }
                        }
