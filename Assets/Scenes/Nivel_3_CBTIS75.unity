@@ -1806,7 +1806,7 @@ MonoBehaviour:
       count: 2
     cameraLockX: 8
     cameraMaxX: 8
-    triggerBusHazard: 0
+    triggerBusHazard: 1
     busHazardDelay: 6
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}

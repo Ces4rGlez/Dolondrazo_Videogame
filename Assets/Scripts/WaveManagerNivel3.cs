@@ -191,8 +191,8 @@ public class WaveManagerNivel3 : MonoBehaviour
             cameraFollow.SetLock(true);
         }
 
-        // Despachar el autobus de forma periodica en esta oleada
-        if (busHazard != null)
+        // Despachar el autobus de forma periodica en esta oleada (solo si wave.triggerBusHazard = true)
+        if (busHazard != null && wave.triggerBusHazard)
         {
             StartCoroutine(PeriodicBusHazardRoutine(wave.busHazardDelay));
         }
