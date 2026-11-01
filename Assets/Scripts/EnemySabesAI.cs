@@ -227,21 +227,27 @@ public class EnemySabesAI : MonoBehaviour
             AudioSource.PlayClipAtPoint(dodgeWhooshSound, transform.position, 0.9f);
         }
 
-        // Impulso BREVE hacia atras (solo 0.12s) para no salir de pantalla
+        Debug.Log("[SABES] !ESQUIVA TACTICA! El estudiante del SABES esquivo el ataque.");
+
+        // CLAVE: esperar 2 frames para que Health.TakeDamage termine su rb.AddForce(knockback)
+        // y luego lo anulamos - si no, el knockback envia al SABES fuera de pantalla
+        yield return null;
+        yield return null;
+
+        // Cancelar el knockback del golpe recibido y aplicar deslizamiento corto de esquiva
+        rb.linearVelocity = Vector2.zero;
         float backwardDir = (playerTransform != null && playerTransform.position.x < transform.position.x) ? 1f : -1f;
         rb.linearVelocity = new Vector2(backwardDir * dodgeSpeed, 0f);
 
         // Flash cyan de agilidad
         if (spriteRenderer != null) StartCoroutine(FlashAgilityRoutine());
 
-        Debug.Log("[SABES] !ESQUIVA TACTICA! El estudiante del SABES esquivo el ataque.");
-
-        // Frena el deslizamiento rapido despues de 0.12s para no salir de pantalla
-        yield return new WaitForSeconds(0.12f);
+        // Deslizamiento breve de 0.10s luego frena - la animacion sigue en su lugar
+        yield return new WaitForSeconds(0.10f);
         rb.linearVelocity = Vector2.zero;
 
-        // La animacion continua reproduciendose en su lugar (dodgeDuration - 0.12s restantes)
-        float remainingAnimTime = dodgeDuration - 0.12f;
+        // Animacion continua en su lugar el resto del tiempo
+        float remainingAnimTime = dodgeDuration - 0.10f;
         if (remainingAnimTime > 0f)
             yield return new WaitForSeconds(remainingAnimTime);
 
@@ -288,15 +294,19 @@ public class EnemySabesAI : MonoBehaviour
             return;
         }
 
-        // Si NO está en cooldown y salta la probabilidad: ¡Esquiva en lugar de recibir el combo!
+        // Si NO esta en cooldown y salta la probabilidad: Esquiva en lugar de recibir el golpe
         if (Time.time >= nextDodgeTime && Random.value <= dodgeChance && damageTaken > 0)
         {
-            // Revertir el primer golpe y esquivar
+            // Revertir el golpe y esquivar
             if (health != null)
             {
                 health.Heal(damageTaken);
                 lastHealthRecorded = health.CurrentHealth;
             }
+            // Restaurar color inmediatamente para contrarrestar el FlashRed de Health.cs
+            // Health.FlashRedRoutine cambia color a rojo - lo cancelamos con color original
+            if (spriteRenderer != null)
+                spriteRenderer.color = Color.white;
             TriggerDodge();
             return;
         }
