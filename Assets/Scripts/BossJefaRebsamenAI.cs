@@ -393,17 +393,34 @@ public class BossJefaRebsamenAI : MonoBehaviour
             yield break;
         }
 
+        // Determinar siempre la dirección hacia el frente de Valentina (hacia Fercho)
+        float forwardDir = -1f;
+        if (playerTransform != null)
+        {
+            forwardDir = Mathf.Sign(playerTransform.position.x - transform.position.x);
+        }
+        else if (transform.localScale.x > 0)
+        {
+            forwardDir = 1f;
+        }
+
+        // Distancias y alturas para que aparezcan DELANTE de ella formando una barrera
+        float[] distances = { 1.8f, 3.2f };
+        float[] yOffsets  = { 0.35f, -0.35f };
+
         for (int i = 0; i < minionsPerSummon; i++)
         {
-            float offsetX = (i % 2 == 0) ? -3.5f : 3.5f;
+            float dist = (i < distances.Length) ? distances[i] : (2.0f + i * 1.2f);
+            float yOff = (i < yOffsets.Length) ? yOffsets[i] : Random.Range(-0.35f, 0.35f);
+
             Vector3 spawnPos = new Vector3(
-                transform.position.x + offsetX,
-                Mathf.Clamp(transform.position.y + Random.Range(-0.3f, 0.3f), minY, maxY),
+                transform.position.x + (forwardDir * dist),
+                Mathf.Clamp(transform.position.y + yOff, minY, maxY),
                 0f
             );
 
             GameObject minion = Instantiate(minionPrefab, spawnPos, Quaternion.identity);
-            Debug.Log($"[BossJefaRebsamenAI] Secuaz Rebsamen #{i + 1} invocado en {spawnPos}");
+            Debug.Log($"[BossJefaRebsamenAI] Secuaz Rebsamen #{i + 1} invocado DELANTE en {spawnPos}");
             yield return new WaitForSeconds(summonDelay);
         }
     }
