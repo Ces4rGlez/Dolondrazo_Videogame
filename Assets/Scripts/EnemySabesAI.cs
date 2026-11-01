@@ -326,7 +326,7 @@ public class EnemySabesAI : MonoBehaviour
 
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.RegisterEnemyDefeated(transform.position);
+            ScoreManager.Instance.RegisterEnemyDefeated();
         }
 
         Destroy(gameObject, 2.8f);
