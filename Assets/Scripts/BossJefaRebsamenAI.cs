@@ -51,8 +51,8 @@ public class BossJefaRebsamenAI : MonoBehaviour
     [SerializeField] private AudioClip laughVoice;
 
     [Header("Límites de Calle")]
-    [SerializeField] private float minY = -3.75f;
-    [SerializeField] private float maxY = -0.6f;
+    [SerializeField] private float minY = -10.5f;   // Nivel 2: suelo más frontal
+    [SerializeField] private float maxY = -5.0f;    // Nivel 2: suelo más trasero
 
     [Header("Ajuste de Cápsula")]
     [SerializeField] private Vector2 colliderOffset = new Vector2(0f, -0.1f);
@@ -122,6 +122,15 @@ public class BossJefaRebsamenAI : MonoBehaviour
         }
 
         cameraFollow = FindFirstObjectByType<CameraFollow>();
+
+        // 2. Detección automática y robusta de los límites de calle de la escena
+        DetectStreetLimits();
+
+        // 3. Si Valentina empezó arriba del suelo (ej. Y > maxY), alinearla de inmediato con Fercho
+        if (playerTransform != null && (transform.position.y > maxY || transform.position.y < minY))
+        {
+            transform.position = new Vector3(transform.position.x, playerTransform.position.y, transform.position.z);
+        }
 
         // Suscribir eventos de salud
         health.OnHealthChanged += HandleHealthChanged;
@@ -531,6 +540,35 @@ public class BossJefaRebsamenAI : MonoBehaviour
             transform.localScale = new Vector3(-Mathf.Abs(baseScale.x), baseScale.y, 1f);
         else if (playerTransform.position.x > transform.position.x + 0.05f)
             transform.localScale = new Vector3(Mathf.Abs(baseScale.x), baseScale.y, 1f);
+    }
+
+    /// <summary>
+    /// Detecta automáticamente los colliders de límite del nivel (Limite_Inferior y Limite_Superior)
+    /// adaptándose tanto al Nivel 1 como al Nivel 2 sin importar el sistema de coordenadas.
+    /// </summary>
+    private void DetectStreetLimits()
+    {
+        GameObject limInf = GameObject.Find("Limite_Inferior");
+        GameObject limSup = GameObject.Find("Limite_Superior");
+
+        if (limInf != null && limInf.TryGetComponent<Collider2D>(out var colInf))
+        {
+            minY = colInf.bounds.max.y + 0.15f;
+        }
+
+        if (limSup != null && limSup.TryGetComponent<Collider2D>(out var colSup))
+        {
+            maxY = colSup.bounds.min.y - 0.15f;
+        }
+
+        // Si no se encuentran los objetos pero está el jugador, estimar basándose en Fercho
+        if (playerTransform != null && (limInf == null || limSup == null))
+        {
+            minY = playerTransform.position.y - 2.5f;
+            maxY = playerTransform.position.y + 1.8f;
+        }
+
+        Debug.Log($"[BossJefaRebsamenAI] Límites de calle configurados: MinY={minY:F2}, MaxY={maxY:F2}");
     }
 
     /// <summary>

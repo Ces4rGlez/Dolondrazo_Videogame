@@ -236,8 +236,8 @@ MonoBehaviour:
   bossMusic: {fileID: 0}
   victoryMusic: {fileID: 0}
   laughVoice: {fileID: 0}
-  minY: -3.75
-  maxY: -0.6
+  minY: -10.5
+  maxY: -5
   colliderOffset: {x: 0, y: -0.1}
   colliderSize: {x: 1.1, y: 2}
 --- !u!114 &1000008
