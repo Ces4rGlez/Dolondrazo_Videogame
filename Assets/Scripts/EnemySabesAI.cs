@@ -227,23 +227,29 @@ public class EnemySabesAI : MonoBehaviour
             AudioSource.PlayClipAtPoint(dodgeWhooshSound, transform.position, 0.9f);
         }
 
-        // Impulso hacia atrás (opuesto a Fercho)
+        // Impulso BREVE hacia atras (solo 0.12s) para no salir de pantalla
         float backwardDir = (playerTransform != null && playerTransform.position.x < transform.position.x) ? 1f : -1f;
         rb.linearVelocity = new Vector2(backwardDir * dodgeSpeed, 0f);
 
-        // Flash blanco/azul de agilidad
+        // Flash cyan de agilidad
         if (spriteRenderer != null) StartCoroutine(FlashAgilityRoutine());
 
-        Debug.Log("[SABES] ¡ESQUIVA TÁCTICA! El estudiante del SABES esquivó el ataque.");
+        Debug.Log("[SABES] !ESQUIVA TACTICA! El estudiante del SABES esquivo el ataque.");
 
-        yield return new WaitForSeconds(dodgeDuration);
-
+        // Frena el deslizamiento rapido despues de 0.12s para no salir de pantalla
+        yield return new WaitForSeconds(0.12f);
         rb.linearVelocity = Vector2.zero;
+
+        // La animacion continua reproduciendose en su lugar (dodgeDuration - 0.12s restantes)
+        float remainingAnimTime = dodgeDuration - 0.12f;
+        if (remainingAnimTime > 0f)
+            yield return new WaitForSeconds(remainingAnimTime);
+
         isDodging = false;
 
         if (currentState != SabesState.Dead)
         {
-            // Oportunidad de contraataque si Fercho está al alcance
+            // Oportunidad de contraataque si Fercho esta al alcance
             if (playerTransform != null && Vector2.Distance(transform.position, playerTransform.position) <= punchRange)
             {
                 ExecutePunch();
