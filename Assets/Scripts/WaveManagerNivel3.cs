@@ -208,7 +208,7 @@ public class WaveManagerNivel3 : MonoBehaviour
         {
             if (busHazard != null)
             {
-                busHazard.TriggerPassingHazard(-7.6f);
+                busHazard.TriggerPassingHazard();  // usa defaultLaneY configurado en el Inspector del BusHazard
             }
             // Repetir el cruce del autobus cada 13 segundos mientras la oleada continue activa
             yield return new WaitForSeconds(13.0f);

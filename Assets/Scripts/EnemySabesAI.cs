@@ -29,7 +29,7 @@ public class EnemySabesAI : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float dodgeChance = 0.50f;
     [SerializeField] private float dodgeCooldown = 2.5f;
     [SerializeField] private float dodgeSpeed = 6.0f;
-    [SerializeField] private float dodgeDuration = 0.45f;
+    [SerializeField] private float dodgeDuration = 1.25f;
     [SerializeField] private AudioClip dodgeWhooshSound;
 
     private SabesState currentState = SabesState.Idle;
@@ -259,7 +259,7 @@ public class EnemySabesAI : MonoBehaviour
     {
         if (spriteRenderer == null) yield break;
         Color original = spriteRenderer.color;
-        spriteRenderer.color = new Color(0.3f, 0.9f, 1f, 0.75f);
+        spriteRenderer.color = new Color(0.4f, 0.95f, 1f, 1.0f);  // cyan puro sin transparencia
         yield return new WaitForSeconds(0.15f);
         if (spriteRenderer != null) spriteRenderer.color = original;
     }

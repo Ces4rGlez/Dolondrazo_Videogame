@@ -34,6 +34,7 @@ public class BusHazard : MonoBehaviour
     [Header("Limites de Recorrido")]
     [SerializeField] private float leftSpawnX = -32.0f;
     [SerializeField] private float rightDespawnX = 35.0f;
+    [SerializeField] private float defaultLaneY = -7.6f;  // Configurable desde Inspector
 
     private BusMode currentMode = BusMode.Inactive;
     private Rigidbody2D rb;
@@ -76,7 +77,7 @@ public class BusHazard : MonoBehaviour
     private void Start()
     {
         SetupUI();
-        transform.position = new Vector3(leftSpawnX, -7.6f, 0f);
+        transform.position = new Vector3(leftSpawnX, defaultLaneY, 0f);
         currentMode = BusMode.Inactive;
     }
 
@@ -155,9 +156,10 @@ public class BusHazard : MonoBehaviour
     /// <summary>
     /// Dispara el cruce a toda velocidad del autobus atropellando enemigos.
     /// </summary>
-    public void TriggerPassingHazard(float laneY = -7.6f)
+    public void TriggerPassingHazard(float laneY = 0f)
     {
         if (currentMode != BusMode.Inactive) return;
+        if (laneY == 0f) laneY = defaultLaneY;  // usa el valor del Inspector si no se especifica
         gameObject.SetActive(true);
         StartCoroutine(PassingHazardRoutine(laneY));
     }
