@@ -230,7 +230,7 @@ MonoBehaviour:
   retreatDistance: 5.5
   retreatSpeed: 7
   defendDuration: 2.5
-  minionPrefab: {fileID: 4495878201029733911, guid: 5b886e02d0e74925a13f8fe58dc62b2b, type: 3}
+  minionPrefab: {fileID: 1000000000000001, guid: 5b886e02d0e74925a13f8fe58dc62b2b, type: 3}
   minionsPerSummon: 2
   summonDelay: 0.6
   bossMusic: {fileID: 0}

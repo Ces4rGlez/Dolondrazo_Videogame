@@ -77,6 +77,7 @@ public class BossJefaRebsamenAI : MonoBehaviour
     private bool hasEntered40Phase = false;
     private Vector3 baseScale;
     private int attackComboCount = 0;   // Alterna Punch / Patada
+    private bool summonRoutineActive = false;
 
     // -----------------------------------------------
     #region Unity Lifecycle
@@ -150,12 +151,13 @@ public class BossJefaRebsamenAI : MonoBehaviour
             return;
         }
 
-        if (currentState == JefaState.Chasing)
+        // Trigger de ataque cuando esta cerca en X e Y
+        if (currentState == JefaState.Chasing || currentState == JefaState.Enraged)
         {
             FacePlayer();
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
-            if (distX <= attackRange && distY <= 2.5f && Time.time >= nextAttackTime)
+            if (distX <= attackRange && distY <= 2.0f && Time.time >= nextAttackTime)
             {
                 ChooseAttack();
             }
@@ -178,17 +180,20 @@ public class BossJefaRebsamenAI : MonoBehaviour
 
         if (currentState == JefaState.Retreating)
         {
-            Vector2 dir = ((Vector3)retreatTarget - transform.position).normalized;
-            float dist  = Vector2.Distance(transform.position, retreatTarget);
-            if (dist > 0.3f)
+            // ── FIX: Mueve SOLO en X al retirarse; Y permanece fija en el suelo ──
+            float targetX   = retreatTarget.x;
+            float distX     = Mathf.Abs(transform.position.x - targetX);
+            float dirX      = Mathf.Sign(targetX - transform.position.x);
+
+            if (distX > 0.3f)
             {
-                rb.linearVelocity = dir * retreatSpeed;
+                rb.linearVelocity = new Vector2(dirX * retreatSpeed, 0f);
                 FacePlayer();
             }
             else
             {
                 rb.linearVelocity = Vector2.zero;
-                if (currentState == JefaState.Retreating)
+                if (currentState == JefaState.Retreating && !summonRoutineActive)
                     StartCoroutine(DefendAndSummonRoutine());
             }
             ClampToStreet();
@@ -208,12 +213,19 @@ public class BossJefaRebsamenAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX > stopDistance || distY > 2.5f)
+            if (distX > stopDistance || distY > 1.5f)
             {
-                Vector2 dir = (playerTransform.position - transform.position).normalized;
-                rb.linearVelocity = dir * speed;
+                // ── FIX: Movimiento separado en X e Y para evitar que Y se desboque ──
+                // X: perseguir al jugador a velocidad completa
+                float vx = Mathf.Sign(playerTransform.position.x - transform.position.x) * speed;
+
+                // Y: corrección suave (máx. 1.5 u/s) para alinearse con Fercho sin overshooting
+                float yError = playerTransform.position.y - transform.position.y;
+                float vy     = Mathf.Clamp(yError * 3.5f, -1.5f, 1.5f);
+
+                rb.linearVelocity = new Vector2(vx, vy);
                 FacePlayer();
-                SetAnimBool("IsRunning", true);
+                SetAnimBool("IsRunning",   true);
                 SetAnimBool("IsDefending", false);
             }
             else
@@ -252,20 +264,19 @@ public class BossJefaRebsamenAI : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         FacePlayer();
 
-        SetAnimBool("IsRunning", false);
+        SetAnimBool("IsRunning",   false);
         SetAnimBool("IsDefending", false);
         animator?.SetTrigger("Punch");
 
         yield return new WaitForSeconds(0.18f);
 
         if (punchSfx != null) AudioSource.PlayClipAtPoint(punchSfx, transform.position, 0.9f);
-
-        // Aplicar daño
         TryDamagePlayer(punchDamage, normalKnockback, applyConcussion: false);
 
         yield return new WaitForSeconds(0.32f);
 
-        StartRetreat();
+        if (currentState != JefaState.Dead)
+            StartRetreat();
     }
 
     private IEnumerator PatadaGiratoriaRoutine()
@@ -275,22 +286,22 @@ public class BossJefaRebsamenAI : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         FacePlayer();
 
-        SetAnimBool("IsRunning", false);
+        SetAnimBool("IsRunning",   false);
         SetAnimBool("IsDefending", false);
         animator?.SetTrigger("Patada");
 
-        // Dar más tiempo a la animación de la patada giratoria (4 frames a 10 fps = 0.4s)
+        // 4 frames a 10fps = 0.4s total; impacto en el frame 2 (0.2s)
         yield return new WaitForSeconds(0.22f);
 
-        if (kickSfx != null) AudioSource.PlayClipAtPoint(kickSfx, transform.position, 1f);
+        if (kickSfx  != null) AudioSource.PlayClipAtPoint(kickSfx,  transform.position, 1f);
         else if (punchSfx != null) AudioSource.PlayClipAtPoint(punchSfx, transform.position, 1f);
 
-        // Patada Giratoria: aplica contusión
         TryDamagePlayer(kickDamage, kickKnockback, applyConcussion: true);
 
         yield return new WaitForSeconds(0.25f);
 
-        StartRetreat();
+        if (currentState != JefaState.Dead)
+            StartRetreat();
     }
 
     private void TryDamagePlayer(int damage, float knockback, bool applyConcussion)
@@ -309,7 +320,7 @@ public class BossJefaRebsamenAI : MonoBehaviour
         if (applyConcussion && playerController != null)
         {
             playerController.ApplyConcussion(concussionDuration);
-            Debug.Log($"[BossJefaRebsamenAI] ¡CONTUSIÓN aplicada a Fercho por {concussionDuration}s!");
+            Debug.Log($"[BossJefaRebsamenAI] ¡CONTUSION aplicada a Fercho por {concussionDuration}s!");
         }
     }
 
@@ -317,19 +328,27 @@ public class BossJefaRebsamenAI : MonoBehaviour
     {
         if (currentState == JefaState.Dead) return;
         currentState = JefaState.Retreating;
+        summonRoutineActive = false;
 
-        // Calcular punto de retirada opuesto al jugador
-        float dirX    = transform.position.x - playerTransform.position.x;
-        float retX    = transform.position.x + Mathf.Sign(dirX) * retreatDistance;
-        retreatTarget = new Vector3(retX, transform.position.y, 0f);
+        // ── FIX: retreatTarget mantiene la Y actual clampeada, solo se mueve en X ──
+        float clampedY = Mathf.Clamp(transform.position.y, minY, maxY);
+        float dirX     = transform.position.x - playerTransform.position.x;
+        float retX     = transform.position.x + Mathf.Sign(dirX) * retreatDistance;
+
+        // Limitar retX a limites razonables de pantalla
+        retX = Mathf.Clamp(retX, -2f, 35f);
+        retreatTarget = new Vector3(retX, clampedY, 0f);
 
         SetAnimBool("IsRunning",   true);
         SetAnimBool("IsDefending", false);
+
+        Debug.Log($"[BossJefaRebsamenAI] Retirada hacia x={retX:F1}");
     }
 
     private IEnumerator DefendAndSummonRoutine()
     {
         if (currentState == JefaState.Dead) yield break;
+        summonRoutineActive = true;
 
         currentState = JefaState.Defending;
         rb.linearVelocity = Vector2.zero;
@@ -340,7 +359,6 @@ public class BossJefaRebsamenAI : MonoBehaviour
 
         Debug.Log("[BossJefaRebsamenAI] Valentina asume postura de Defensa. ¡Invocando secuaces!");
 
-        // Mostrar banner de refuerzo en pantalla breve
         yield return new WaitForSeconds(0.6f);
 
         // Invocar secuaces
@@ -350,26 +368,33 @@ public class BossJefaRebsamenAI : MonoBehaviour
         SetAnimBool("IsDefending", false);
         yield return new WaitForSeconds(0.35f);
 
+        summonRoutineActive = false;
+
         if (currentState != JefaState.Dead)
-            currentState = JefaState.Chasing;
+        {
+            currentState = (hasEntered40Phase) ? JefaState.Enraged : JefaState.Chasing;
+        }
     }
 
     private IEnumerator SummonMinionsRoutine()
     {
         if (minionPrefab == null)
         {
-            Debug.LogWarning("[BossJefaRebsamenAI] minionPrefab no asignado. No se invocarán secuaces.");
+            Debug.LogWarning("[BossJefaRebsamenAI] minionPrefab no asignado. Secuaces no invocados.");
             yield break;
         }
 
         for (int i = 0; i < minionsPerSummon; i++)
         {
-            float offsetX = (i == 0) ? -3.5f : 3.5f;
-            float offsetY = Random.Range(-0.4f, 0.4f);
-            Vector3 spawnPos = transform.position + new Vector3(offsetX, offsetY, 0f);
-            spawnPos.y = Mathf.Clamp(spawnPos.y, minY, maxY);
-            Instantiate(minionPrefab, spawnPos, Quaternion.identity);
-            Debug.Log($"[BossJefaRebsamenAI] ¡Secuaz Rébsamen #{i + 1} invocado en {spawnPos}!");
+            float offsetX = (i % 2 == 0) ? -3.5f : 3.5f;
+            Vector3 spawnPos = new Vector3(
+                transform.position.x + offsetX,
+                Mathf.Clamp(transform.position.y + Random.Range(-0.3f, 0.3f), minY, maxY),
+                0f
+            );
+
+            GameObject minion = Instantiate(minionPrefab, spawnPos, Quaternion.identity);
+            Debug.Log($"[BossJefaRebsamenAI] Secuaz Rebsamen #{i + 1} invocado en {spawnPos}");
             yield return new WaitForSeconds(summonDelay);
         }
     }
@@ -384,10 +409,10 @@ public class BossJefaRebsamenAI : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         FacePlayer();
 
-        // Bloquear cámara
+        // Bloquear camara
         cameraFollow?.SetLock(true);
 
-        // Música de jefe
+        // Musica de jefa
         if (bossMusic != null && bgmSource != null)
         {
             bgmSource.clip = bossMusic;
@@ -404,7 +429,7 @@ public class BossJefaRebsamenAI : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
-        // Cutscene (diálogo)
+        // Cutscene (dialogo)
         var cutscene = GetComponent<BossJefaCutscene>();
         if (cutscene != null) cutscene.TriggerBossCutscene();
         if (cutscene != null)
@@ -420,13 +445,11 @@ public class BossJefaRebsamenAI : MonoBehaviour
     {
         if (hasEntered40Phase) return;
         hasEntered40Phase = true;
-        currentState = JefaState.Enraged;
-        concussionDuration = 2.5f; // Más duradera
+        currentState      = JefaState.Enraged;
+        concussionDuration = 2.5f;
 
-        // Flash rojo/violeta en SpriteRenderer para indicar la fase
         StartCoroutine(EnragedFlashRoutine());
-
-        Debug.Log("[BossJefaRebsamenAI] ¡VALENTINA ENTRÓ EN MODO FRESA ENOJADA! (Fase 40%)");
+        Debug.Log("[BossJefaRebsamenAI] ¡VALENTINA ENTRO EN MODO FRESA ENOJADA! (Fase 40%)");
     }
 
     private IEnumerator EnragedFlashRoutine()
@@ -459,13 +482,13 @@ public class BossJefaRebsamenAI : MonoBehaviour
             return;
         }
 
-        // Hiperarmadura durante ataques: no interrumpir la animación
+        // Hiperarmadura: no interrumpir ataque activo
         if (currentState != JefaState.Attacking)
         {
             animator?.SetTrigger("Hurt");
         }
 
-        // Fase de furia al 40% de vida
+        // Fase de furia al 40%
         float ratio = (float)current / max;
         if (ratio <= 0.4f && !hasEntered40Phase)
         {
@@ -482,19 +505,15 @@ public class BossJefaRebsamenAI : MonoBehaviour
         SetAnimBool("IsDefending", false);
         animator?.SetTrigger("Die");
 
-        // Desactivar collider
         if (TryGetComponent<Collider2D>(out var col)) col.enabled = false;
 
-        // Puntos al ScoreManager
         if (ScoreManager.Instance != null) ScoreManager.Instance.RegisterBossDefeated();
 
-        Debug.Log("[BossJefaRebsamenAI] ¡VALENTINA HA SIDO DERROTADA! Ampliando cámara al sector Cinépolis...");
+        Debug.Log("[BossJefaRebsamenAI] ¡VALENTINA HA SIDO DERROTADA! Ampliando camara...");
 
-        // Ampliar cámara al sector completo
         cameraFollow?.SetMaxX(36f);
         cameraFollow?.SetLock(false);
 
-        // Victoria
         BossHUD hud = FindFirstObjectByType<BossHUD>();
         if (hud != null) hud.TriggerVictorySequence(victoryMusic, bgmSource);
 
@@ -514,11 +533,29 @@ public class BossJefaRebsamenAI : MonoBehaviour
             transform.localScale = new Vector3(Mathf.Abs(baseScale.x), baseScale.y, 1f);
     }
 
+    /// <summary>
+    /// Fija la posicion Y dentro de los limites de calle Y anula la componente Y
+    /// de la velocidad cuando toca los limites para evitar "flotado".
+    /// </summary>
     private void ClampToStreet()
     {
         float cy = Mathf.Clamp(transform.position.y, minY, maxY);
-        if (transform.position.y != cy)
+        if (!Mathf.Approximately(transform.position.y, cy))
+        {
             transform.position = new Vector3(transform.position.x, cy, transform.position.z);
+        }
+
+        // Cancelar velocidad Y si presiona contra el limite
+        if (rb != null)
+        {
+            float vy = rb.linearVelocity.y;
+            bool  atBottom = cy <= minY && vy < 0f;
+            bool  atTop    = cy >= maxY && vy > 0f;
+            if (atBottom || atTop)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+            }
+        }
     }
 
     private void SetAnimBool(string param, bool value)
