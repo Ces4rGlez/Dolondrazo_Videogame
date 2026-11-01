@@ -180,6 +180,7 @@ public class EquippableWeapon : MonoBehaviour
         transform.SetParent(playerTransform, false);
         transform.localPosition = equipOffset;
         transform.localRotation = Quaternion.Euler(restRotation);
+        transform.localScale = new Vector3(1.15f, 1.15f, 1f);
 
         if (promptText != null)
         {

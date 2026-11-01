@@ -191,20 +191,27 @@ public class WaveManagerNivel3 : MonoBehaviour
             cameraFollow.SetLock(true);
         }
 
-        if (wave.triggerBusHazard && busHazard != null)
+        // Despachar el autobus de forma periodica en esta oleada
+        if (busHazard != null)
         {
-            StartCoroutine(ScheduleBusHazard(wave.busHazardDelay));
+            StartCoroutine(PeriodicBusHazardRoutine(wave.busHazardDelay));
         }
 
         yield return StartCoroutine(WaitForWaveClearRoutine());
     }
 
-    private IEnumerator ScheduleBusHazard(float delay)
+    private IEnumerator PeriodicBusHazardRoutine(float initialDelay)
     {
-        yield return new WaitForSeconds(delay);
-        if (waveActive && busHazard != null)
+        yield return new WaitForSeconds(initialDelay);
+
+        while (waveActive)
         {
-            busHazard.TriggerPassingHazard(-7.6f);
+            if (busHazard != null)
+            {
+                busHazard.TriggerPassingHazard(-7.6f);
+            }
+            // Repetir el cruce del autobus cada 13 segundos mientras la oleada continue activa
+            yield return new WaitForSeconds(13.0f);
         }
     }
 

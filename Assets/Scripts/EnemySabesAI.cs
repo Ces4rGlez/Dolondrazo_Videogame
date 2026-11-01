@@ -15,11 +15,11 @@ public class EnemySabesAI : MonoBehaviour
 {
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 4.2f;
-    [SerializeField] private float stopDistance = 1.35f;
+    [SerializeField] private float stopDistance = 1.30f;
 
     [Header("Combate SABES")]
-    [SerializeField] private float punchRange = 1.4f;
-    [SerializeField] private float attackCooldown = 1.25f;
+    [SerializeField] private float punchRange = 1.85f;
+    [SerializeField] private float attackCooldown = 1.2f;
     [SerializeField] private int punchDamage = 16;
     [SerializeField] private float punchKnockback = 4.0f;
     [SerializeField] private LayerMask playerLayer;

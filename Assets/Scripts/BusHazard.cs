@@ -16,7 +16,7 @@ public class BusHazard : MonoBehaviour
     public enum BusMode { Inactive, Warning, Speeding, Arriving, Parked, Departing }
 
     [Header("Configuracion de Velocidad")]
-    [SerializeField] private float speedCross = 20.0f;
+    [SerializeField] private float speedCross = 22.0f;
     [SerializeField] private float speedArrive = 6.5f;
     [SerializeField] private float speedDepart = 12.0f;
 
@@ -32,7 +32,7 @@ public class BusHazard : MonoBehaviour
     [SerializeField] private AudioClip doorSound;
 
     [Header("Limites de Recorrido")]
-    [SerializeField] private float leftSpawnX = -18.0f;
+    [SerializeField] private float leftSpawnX = -32.0f;
     [SerializeField] private float rightDespawnX = 35.0f;
 
     private BusMode currentMode = BusMode.Inactive;
@@ -77,7 +77,7 @@ public class BusHazard : MonoBehaviour
     {
         SetupUI();
         transform.position = new Vector3(leftSpawnX, -7.6f, 0f);
-        gameObject.SetActive(false);
+        currentMode = BusMode.Inactive;
     }
 
     private void SetupUI()
@@ -180,8 +180,8 @@ public class BusHazard : MonoBehaviour
             yield return null;
         }
 
+        transform.position = new Vector3(leftSpawnX, defaultLaneY, 0f);
         currentMode = BusMode.Inactive;
-        gameObject.SetActive(false);
     }
 
     /// <summary>
