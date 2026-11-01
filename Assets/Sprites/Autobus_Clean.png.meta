@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 48065fbf58614cdf9d35a32d9fad8433
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 13
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+  spriteMode: 1
+  spritePixelsToUnits: 96
+  textureType: 8

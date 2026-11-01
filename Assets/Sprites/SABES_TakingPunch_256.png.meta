@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: 6a1f3f1c281d4dcdb7fd18665b8ca041
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 7593552878861237877
+    second: SABES_TakingPunch_0
+  - first:
+      213: 474470309697031372
+    second: SABES_TakingPunch_1
+  - first:
+      213: 9195439344420483455
+    second: SABES_TakingPunch_2
+  - first:
+      213: 1949846603784048323
+    second: SABES_TakingPunch_3
+  externalObjects: {}
+  serializedVersion: 13
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+  spriteMode: 2
+  spritePixelsToUnits: 96
+  textureType: 8
+  spriteSheet:
+    serializedVersion: 2
+    sprites: []

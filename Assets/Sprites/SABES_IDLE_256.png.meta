@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: a4d549e393d5401fba2dbed91a51126f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3525023425641590121
+    second: SABES_Idle_0
+  - first:
+      213: 2820526559518156168
+    second: SABES_Idle_1
+  - first:
+      213: 2131305298383865202
+    second: SABES_Idle_2
+  - first:
+      213: 8391423719338176520
+    second: SABES_Idle_3
+  externalObjects: {}
+  serializedVersion: 13
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+  spriteMode: 2
+  spritePixelsToUnits: 96
+  textureType: 8
+  spriteSheet:
+    serializedVersion: 2
+    sprites: []

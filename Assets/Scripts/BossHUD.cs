@@ -109,6 +109,7 @@ public class BossHUD : MonoBehaviour
         {
             EnemyAI[] remainingEnemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
             EnemyRebsamenAI[] remainingRebsamen = FindObjectsByType<EnemyRebsamenAI>(FindObjectsSortMode.None);
+            EnemySabesAI[] remainingSabes = FindObjectsByType<EnemySabesAI>(FindObjectsSortMode.None);
             int aliveCount = 0;
             foreach (var enemy in remainingEnemies)
             {
@@ -119,6 +120,14 @@ public class BossHUD : MonoBehaviour
                 }
             }
             foreach (var enemy in remainingRebsamen)
+            {
+                if (enemy != null && enemy.gameObject.activeInHierarchy)
+                {
+                    Health h = enemy.GetComponent<Health>();
+                    if (h != null && !h.IsDead) aliveCount++;
+                }
+            }
+            foreach (var enemy in remainingSabes)
             {
                 if (enemy != null && enemy.gameObject.activeInHierarchy)
                 {
@@ -182,6 +191,7 @@ public class BossHUD : MonoBehaviour
 
         string activeSceneName = SceneManager.GetActiveScene().name;
         bool isLevel2 = activeSceneName.Contains("2") || activeSceneName.Contains("Cinepolis");
+        bool isLevel3 = activeSceneName.Contains("3") || activeSceneName.Contains("CBTIS");
 
         // Intentar obtener portrait desde BossJefaCutscene si estamos en Nivel 2
         if (ferChoPortrait == null)
@@ -196,7 +206,37 @@ public class BossHUD : MonoBehaviour
 
         List<DialogueSystem.DialogueLine> lines;
 
-        if (isLevel2)
+        if (isLevel3)
+        {
+            lines = new List<DialogueSystem.DialogueLine>
+            {
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "¡Al fin llegó el Zafiro! Entre los del SABES esquivando todo y la regla T rota, pensé que no la contaba.",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Fercho",
+                    portrait    = ferChoPortrait,
+                    nameColor   = ferChoColor,
+                    text        = "¡El CBTis 75 quedó atrás! Próxima parada: Centro de Dolores... ¡Esa maqueta se entrega hoy sí o sí!",
+                    typeSpeed   = 0.04f
+                },
+                new DialogueSystem.DialogueLine
+                {
+                    speakerName = "Narrador",
+                    portrait    = null,
+                    nameColor   = narratorColor,
+                    text        = "¡ACTO III COMPLETADO! Fercho aborda el autobús en las puertas del CBTis 75 rumbo al Centro Histórico...",
+                    typeSpeed   = 0.038f
+                }
+            };
+        }
+        else         if (isLevel2)
         {
             lines = new List<DialogueSystem.DialogueLine>
             {
@@ -334,9 +374,10 @@ public class BossHUD : MonoBehaviour
         MakeBar(cardObj.transform, white, new Vector2(0f,1f), new Vector2(1f,1f), new Vector2(0.5f,1f),
                 Vector2.zero, new Vector2(0f, 6f), new Color(1f, 0.84f, 0f, 1f), "TopGold");
 
+        bool isLevel3Scene = SceneManager.GetActiveScene().name.Contains("3") || SceneManager.GetActiveScene().name.Contains("CBTIS");
         bool isLevel2Scene = SceneManager.GetActiveScene().name.Contains("2") || SceneManager.GetActiveScene().name.Contains("Cinepolis");
-        string clearTitle = isLevel2Scene ? "*** STAGE 2 CLEAR! ***" : "*** STAGE 1 CLEAR! ***";
-        string clearSub   = isLevel2Scene ? "CINÉPOLIS PASEO DOLORES - VALENTINA DERROTADA" : "CALZADA DE LOS HEROES - ALUMNO DE TALLER DERROTADO";
+        string clearTitle = isLevel3Scene ? "*** STAGE 3 CLEAR! ***" : (isLevel2Scene ? "*** STAGE 2 CLEAR! ***" : "*** STAGE 1 CLEAR! ***");
+        string clearSub   = isLevel3Scene ? "CBTIS 75 - ENTRADA DESPEJADA Y ABORDAJE DEL ZAFIRO" : (isLevel2Scene ? "CINÉPOLIS PASEO DOLORES - VALENTINA DERROTADA" : "CALZADA DE LOS HEROES - ALUMNO DE TALLER DERROTADO");
 
         // Titulo STAGE CLEAR
         MakeText(cardObj.transform, clearTitle,
@@ -406,7 +447,7 @@ public class BossHUD : MonoBehaviour
 
         // --- BOTONES INTERACTIVOS ---
         // 1. Continuar al Siguiente Nivel
-        string nextBtnLabel = isLevel2Scene ? ">> NIVEL 3" : ">> NIVEL 2";
+        string nextBtnLabel = isLevel3Scene ? ">> MENU" : (isLevel2Scene ? ">> NIVEL 3" : ">> NIVEL 2");
         MakeButton(cardObj.transform, white, new Vector2(-260f, -220f), new Vector2(230f, 65f),
                    nextBtnLabel, new Color(0.15f, 0.65f, 0.35f, 1f), new Color(0.25f, 0.85f, 0.45f, 1f),
                    "Btn_NextLevel", () =>
