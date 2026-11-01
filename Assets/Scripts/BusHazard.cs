@@ -180,7 +180,7 @@ public class BusHazard : MonoBehaviour
             yield return null;
         }
 
-        transform.position = new Vector3(leftSpawnX, defaultLaneY, 0f);
+        transform.position = new Vector3(leftSpawnX, laneY, 0f);
         currentMode = BusMode.Inactive;
     }
 
