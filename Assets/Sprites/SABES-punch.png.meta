@@ -747,16 +747,6 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 142b9b6d2c81fa4a0800000000000000
-      internalID: -6580013305459789247
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     - serializedVersion: 2
       name: SABES-punch_1
       rect:
@@ -1324,6 +1314,31 @@ TextureImporter:
       SABES-punch_7: -4753150694095686830
       SABES-punch_8: -964944615398781434
       SABES-punch_9: -3860239863307837300
+      SABES_Punch_0: 4423253017990326796
+      SABES_Punch_1: 1583304488138891785
+      SABES_Punch_10: 5081570492414609877
+      SABES_Punch_11: 594200026578000847
+      SABES_Punch_12: 4237068503461443164
+      SABES_Punch_13: 6051103457217799321
+      SABES_Punch_14: 5554381559576192819
+      SABES_Punch_15: 3411374050761689345
+      SABES_Punch_16: 8767164901069230987
+      SABES_Punch_17: 7860017051251873355
+      SABES_Punch_18: 4255175965117080590
+      SABES_Punch_19: 1026718657086301998
+      SABES_Punch_2: 2810163752318832988
+      SABES_Punch_20: 6906821504016428322
+      SABES_Punch_21: 5842622207382146318
+      SABES_Punch_22: 6178943794668287266
+      SABES_Punch_23: 5589968138767145020
+      SABES_Punch_24: 6266600531486593674
+      SABES_Punch_3: 282947260118570362
+      SABES_Punch_4: 4915985227449125893
+      SABES_Punch_5: 4101763080719731860
+      SABES_Punch_6: 5400095460213695640
+      SABES_Punch_7: 5023458964764241668
+      SABES_Punch_8: 7691874723627184562
+      SABES_Punch_9: 8864949592384037164
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -497,16 +497,6 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 78ce2818d2118be10800000000000000
-      internalID: 2213538103996640391
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     - serializedVersion: 2
       name: SABES-run_1
       rect:
@@ -821,6 +811,21 @@ TextureImporter:
       SABES-run_7: 4659562966525136021
       SABES-run_8: 7363093350722303452
       SABES-run_9: 3529068967290996711
+      SABES_Run_0: 1935598946781858199
+      SABES_Run_1: 5276163040668478054
+      SABES_Run_10: 6036244182012183918
+      SABES_Run_11: 1893038898464275947
+      SABES_Run_12: 69167530601570610
+      SABES_Run_13: 5371214845932131993
+      SABES_Run_14: 7830294535382783399
+      SABES_Run_2: 8535403120620562079
+      SABES_Run_3: 7970499476710492775
+      SABES_Run_4: 5341955473101314126
+      SABES_Run_5: 8146504120687118439
+      SABES_Run_6: 5085579243275598097
+      SABES_Run_7: 6843027581247091262
+      SABES_Run_8: 7828680010567999499
+      SABES_Run_9: 3863833888447959379
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -747,16 +747,6 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8aeb4ddb47feaba70800000000000000
-      internalID: 8843644102975471272
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     - serializedVersion: 2
       name: SABES-death_1
       rect:
@@ -1324,6 +1314,31 @@ TextureImporter:
       SABES-death_7: -2069339748106197406
       SABES-death_8: -6569543030878248073
       SABES-death_9: 1597462511256341155
+      SABES_Death_0: 5212054551706193287
+      SABES_Death_1: 5368046990844791539
+      SABES_Death_10: 3801633452200784476
+      SABES_Death_11: 7568798672172501171
+      SABES_Death_12: 9189599980904110747
+      SABES_Death_13: 4927466465314382350
+      SABES_Death_14: 4616947720233240524
+      SABES_Death_15: 189388513351013750
+      SABES_Death_16: 8133059592564991874
+      SABES_Death_17: 2471300381855080935
+      SABES_Death_18: 1758124573099027009
+      SABES_Death_19: 7136784554767762105
+      SABES_Death_2: 4798245697011124736
+      SABES_Death_20: 4598492011453464134
+      SABES_Death_21: 7221859244748427418
+      SABES_Death_22: 1829622709450247884
+      SABES_Death_23: 8855456577239719253
+      SABES_Death_24: 1979980505868048982
+      SABES_Death_3: 8716299384551272271
+      SABES_Death_4: 6289098684533715460
+      SABES_Death_5: 4203843969361266019
+      SABES_Death_6: 2212983249526225339
+      SABES_Death_7: 3546772318881572374
+      SABES_Death_8: 6771517216513133825
+      SABES_Death_9: 1434542882084256938
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

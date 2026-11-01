@@ -747,16 +747,6 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f364792f2336e9610800000000000000
-      internalID: 1629849185624213055
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     - serializedVersion: 2
       name: SABES-esquivar-especial_1
       rect:
@@ -1324,6 +1314,31 @@ TextureImporter:
       SABES-esquivar-especial_7: -6138301037068902421
       SABES-esquivar-especial_8: -2284779169181235487
       SABES-esquivar-especial_9: -4940093499458544051
+      SABES_Dodge_0: 9109270971245936908
+      SABES_Dodge_1: 5573234708098457632
+      SABES_Dodge_10: 7650689398102289465
+      SABES_Dodge_11: 1011928863133300726
+      SABES_Dodge_12: 2612738935540784788
+      SABES_Dodge_13: 2484596432477001902
+      SABES_Dodge_14: 6952455556881349543
+      SABES_Dodge_15: 4303046119243533786
+      SABES_Dodge_16: 2818767492780554124
+      SABES_Dodge_17: 5122903908072340586
+      SABES_Dodge_18: 8500638415810606922
+      SABES_Dodge_19: 1409650810620251460
+      SABES_Dodge_2: 1019184222392036972
+      SABES_Dodge_20: 7958517461285531557
+      SABES_Dodge_21: 7279284464655463863
+      SABES_Dodge_22: 8597153584370419954
+      SABES_Dodge_23: 4800198864210620748
+      SABES_Dodge_24: 4342374191375001584
+      SABES_Dodge_3: 8091155407493669371
+      SABES_Dodge_4: 2529807073403773005
+      SABES_Dodge_5: 8652551606665052598
+      SABES_Dodge_6: 8687109377377489463
+      SABES_Dodge_7: 234215904512006360
+      SABES_Dodge_8: 3576477642257706074
+      SABES_Dodge_9: 2291422670591350956
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
