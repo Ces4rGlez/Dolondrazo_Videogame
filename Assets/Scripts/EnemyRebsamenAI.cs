@@ -13,7 +13,7 @@ public enum RebsamenState { Idle, Chasing, Defending, Attacking, Stunned, Dead }
 public class EnemyRebsamenAI : MonoBehaviour
 {
     [Header("Movimiento Agil")]
-    [SerializeField] private float moveSpeed = 3.2f;
+    [SerializeField] private float moveSpeed = 4.8f;
     [SerializeField] private float stopDistance = 1.25f;
 
     [Header("Combate Rebsamen")]

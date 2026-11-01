@@ -32,7 +32,8 @@ public class PlayerController : MonoBehaviour
     private bool isFacingRight = true;
     private bool isDead = false;
     private bool isJumping = false;
-    private float groundY;         // Posicion Y base del personaje
+    private float groundY;
+    public bool IsCarryingItem { get; set; } = false;         // Posicion Y base del personaje
     private Coroutine jumpCoroutine;
 
     private void Awake()
@@ -132,6 +133,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // --- 6. Ataques (J = Punetazo, K = Patada) ---
+        if (IsCarryingItem) return;
         bool punchPressed = keyboard.jKey.wasPressedThisFrame || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame);
         bool kickPressed  = keyboard.kKey.wasPressedThisFrame || (gamepad != null && gamepad.buttonNorth.wasPressedThisFrame);
 
