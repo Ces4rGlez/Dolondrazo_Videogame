@@ -152,8 +152,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.15}
-  m_Size: {x: 1.1, y: 0.5}
+  m_Offset: {x: 0, y: -0.95}
+  m_Size: {x: 1, y: 0.45}
   m_Direction: 1
 --- !u!95 &1000000000000006
 Animator:
@@ -220,10 +220,8 @@ MonoBehaviour:
   minionCount: 4
   minionPhaseThreshold: 0.1
   restoreToPercent: 0.4
-  minY: -10.5
-  maxY: -5
-  colliderOffset: {x: 0, y: -0.1}
-  colliderSize: {x: 1.1, y: 2}
+  colliderOffset: {x: 0, y: -0.95}
+  colliderSize: {x: 1, y: 0.45}
   bossMusic: {fileID: 0}
   victoryMusic: {fileID: 0}
 --- !u!114 &1000000000000009

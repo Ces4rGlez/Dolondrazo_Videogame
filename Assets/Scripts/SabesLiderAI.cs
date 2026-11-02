@@ -5,12 +5,12 @@ using UnityEngine;
 /// <summary>
 /// SabesLiderAI - Minijefe del Nivel 3: "El Prefecto / Líder del SABES".
 /// Mecánicas:
-///   - Tanque: Alta resistencia, ataques devastadores pero con buena movilidad.
+///   - Tanque ágil: Alta resistencia, ataques devastadores y libre desplazamiento por toda la calle.
+///   - Collider horizontal a los pies: Permite subir y bajar libremente por la avenida como Fercho.
 ///   - Combo pesado: Alterna Puñetazo Uppercut (daño medio-alto) y Patada Pesada (daño muy alto).
-///   - Auto-curación al 60% de daño recibido (40% de vida restante): se recupera vida a sí mismo una sola vez.
-///   - Hiperarmadura durante ataques para no ser interrumpido con facilidad.
-///   - Integración con BossHUD para mostrar su barra de vida en el HUD.
-///   - Música y diálogo de cinemática personalizables.
+///   - Auto-curación al 60% de daño recibido (40% de vida restante): se recupera 70 HP una sola vez.
+///   - Hiperarmadura durante ataques.
+///   - Integración con BossHUD y diálogo cinemático previo al combate.
 /// </summary>
 public enum SabesLiderState { Dormant, Idle, Chasing, Attacking, Healing, Dead }
 
@@ -20,11 +20,11 @@ public class SabesLiderAI : MonoBehaviour
     [Header("Parámetros del Líder")]
     [SerializeField] private string bossName = "EL PREFECTO - LÍDER SABES";
     [SerializeField] private float moveSpeed = 3.8f;
-    [SerializeField] private float stopDistance = 1.5f;
+    [SerializeField] private float stopDistance = 1.3f;
     [SerializeField] private float activationDistance = 14f;
 
     [Header("Combate Pesado")]
-    [SerializeField] private float attackRange = 1.9f;
+    [SerializeField] private float attackRange = 1.8f;
     [SerializeField] private float attackCooldown = 1.3f;
     [SerializeField] private int punchDamage = 28;
     [SerializeField] private int kickDamage = 42;
@@ -44,13 +44,9 @@ public class SabesLiderAI : MonoBehaviour
     [SerializeField] private int healAmount = 70;
     [SerializeField] private float healDuration = 1.2f;
 
-    [Header("Límites de Calle")]
-    [SerializeField] private float minY = -10.5f;
-    [SerializeField] private float maxY = -5.0f;
-
-    [Header("Collider")]
-    [SerializeField] private Vector2 colliderOffset = new Vector2(0f, -0.1f);
-    [SerializeField] private Vector2 colliderSize = new Vector2(1.2f, 2.1f);
+    [Header("Collider a los Pies")]
+    [SerializeField] private Vector2 colliderOffset = new Vector2(0f, -0.95f);
+    [SerializeField] private Vector2 colliderSize = new Vector2(1.1f, 0.45f);
 
     // Componentes
     private Rigidbody2D rb;
@@ -66,7 +62,7 @@ public class SabesLiderAI : MonoBehaviour
 
     private float nextAttackTime = 0f;
     private bool hasHealed = false;
-    private int comboStep = 0; // 0 = Punch, 1 = Kick
+    private int comboStep = 0;
     private Vector3 baseScale;
 
     private void Awake()
@@ -86,7 +82,7 @@ public class SabesLiderAI : MonoBehaviour
         CapsuleCollider2D col = GetComponent<CapsuleCollider2D>();
         if (col != null)
         {
-            col.direction = CapsuleDirection2D.Vertical;
+            col.direction = CapsuleDirection2D.Horizontal;
             col.offset = colliderOffset;
             col.size = colliderSize;
         }
@@ -118,8 +114,6 @@ public class SabesLiderAI : MonoBehaviour
             health.OnHealthChanged += HandleHealthChanged;
             health.OnDeath += HandleDeath;
         }
-
-        DetectStreetLimits();
     }
 
     private void Update()
@@ -138,7 +132,11 @@ public class SabesLiderAI : MonoBehaviour
             return;
         }
 
-        ClampToStreet();
+        // Seguridad para no salir del mapa
+        if (transform.position.y < -11.5f)
+        {
+            transform.position = new Vector3(transform.position.x, -10.0f, transform.position.z);
+        }
 
         if (currentState == SabesLiderState.Chasing)
         {
@@ -147,14 +145,53 @@ public class SabesLiderAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX <= attackRange && distY <= 1.2f && Time.time >= nextAttackTime)
+            if (distX <= attackRange && distY <= 0.75f && Time.time >= nextAttackTime)
             {
                 StartCoroutine(PerformAttackRoutine());
             }
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (currentState == SabesLiderState.Chasing && playerTransform != null)
+        {
+            float dx = playerTransform.position.x - transform.position.x;
+            float dy = playerTransform.position.y - transform.position.y;
+            float absDx = Mathf.Abs(dx);
+            float absDy = Mathf.Abs(dy);
+
+            float vx = 0f;
+            float vy = 0f;
+
+            // Alineación en carril vertical (Y)
+            if (absDy > 0.35f)
+            {
+                vy = Mathf.Sign(dy) * moveSpeed;
+            }
+
+            // Acercamiento horizontal (X)
+            if (absDx > stopDistance)
+            {
+                vx = Mathf.Sign(dx) * moveSpeed;
+            }
+
+            Vector2 moveDir = new Vector2(vx, vy);
+            if (moveDir.sqrMagnitude > 0.01f)
+            {
+                rb.linearVelocity = moveDir.normalized * moveSpeed;
+                if (animator != null) animator.SetBool("IsRunning", true);
+            }
             else
             {
-                MoveTowardPlayer();
+                rb.linearVelocity = Vector2.zero;
+                if (animator != null) animator.SetBool("IsRunning", false);
             }
+        }
+        else if (currentState != SabesLiderState.Attacking)
+        {
+            if (rb != null) rb.linearVelocity = Vector2.zero;
+            if (animator != null) animator.SetBool("IsRunning", false);
         }
     }
 
@@ -182,19 +219,6 @@ public class SabesLiderAI : MonoBehaviour
         if (TryGetComponent<BossCutsceneSabesLider>(out var cutscene))
         {
             cutscene.TriggerCutscene();
-        }
-    }
-
-    private void MoveTowardPlayer()
-    {
-        if (playerTransform == null || rb == null) return;
-
-        Vector2 dir = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
-        rb.linearVelocity = dir * moveSpeed;
-
-        if (animator != null)
-        {
-            animator.SetBool("IsRunning", true);
         }
     }
 
@@ -379,42 +403,6 @@ public class SabesLiderAI : MonoBehaviour
         }
 
         Destroy(gameObject, 3.5f);
-    }
-
-    private void DetectStreetLimits()
-    {
-        GameObject limInf = GameObject.Find("Limite_Inferior");
-        GameObject limSup = GameObject.Find("Limite_Superior");
-
-        if (limInf != null && limInf.TryGetComponent<Collider2D>(out var colInf))
-        {
-            minY = colInf.bounds.max.y + 0.15f;
-        }
-
-        if (limSup != null && limSup.TryGetComponent<Collider2D>(out var colSup))
-        {
-            maxY = colSup.bounds.min.y - 0.15f;
-        }
-    }
-
-    private void ClampToStreet()
-    {
-        float cy = Mathf.Clamp(transform.position.y, minY, maxY);
-        if (!Mathf.Approximately(transform.position.y, cy))
-        {
-            transform.position = new Vector3(transform.position.x, cy, transform.position.z);
-        }
-
-        if (rb != null)
-        {
-            float vy = rb.linearVelocity.y;
-            bool atBottom = cy <= minY && vy < 0f;
-            bool atTop = cy >= maxY && vy > 0f;
-            if (atBottom || atTop)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-            }
-        }
     }
 
     private void OnDestroy()

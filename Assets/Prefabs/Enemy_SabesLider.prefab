@@ -152,8 +152,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0.15}
-  m_Size: {x: 1.2, y: 0.5}
+  m_Offset: {x: 0, y: -0.95}
+  m_Size: {x: 1.1, y: 0.45}
   m_Direction: 1
 --- !u!95 &1000000000000006
 Animator:
@@ -220,10 +220,8 @@ MonoBehaviour:
   healHealthThreshold: 0.4
   healAmount: 70
   healDuration: 1.2
-  minY: -10.5
-  maxY: -5
-  colliderOffset: {x: 0, y: -0.1}
-  colliderSize: {x: 1.2, y: 2.1}
+  colliderOffset: {x: 0, y: -0.95}
+  colliderSize: {x: 1.1, y: 0.45}
 --- !u!114 &1000000000000009
 MonoBehaviour:
   m_ObjectHideFlags: 0

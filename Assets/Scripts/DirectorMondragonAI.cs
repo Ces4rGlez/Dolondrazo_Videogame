@@ -4,15 +4,16 @@ using UnityEngine;
 
 /// <summary>
 /// DirectorMondragonAI - Boss Final del Nivel 3: "Lic. Mondragón - Director del CBTis 75".
-/// Mecánicas solicitadas:
+/// Mecánicas:
 ///   1. Al perder el 25% de vida (75% restante): Invoca un clon de sí mismo.
-///      El original se queda en postura defensiva/idle sin atacar.
+///      El original se queda en postura defensiva sin atacar.
 ///      Cuando Fercho derrota al clon, el original vuelve a la acción.
-///   2. Al perder el 90% de vida (10% restante): Invoca a varios secuaces del SABES.
+///   2. Al perder el 90% de vida (10% restante): Invoca a 4 secuaces del SABES.
 ///      Mientras Fercho combate a los secuaces, el Director NO ataca.
 ///      Vuelve a atacar únicamente cuando todos los secuaces hayan sido derrotados.
-///   3. Al perder el 99% de vida (al borde de caer): Se restaura automáticamente al 40% de vida
+///   3. Al perder el 99% de vida: Se restaura automáticamente al 40% de vida
 ///      para una fase final de desesperación, antes de caer definitivamente.
+///   4. Collider a los pies para desplazarse fluidamente por toda la calle.
 /// </summary>
 public enum DirectorState { Dormant, Chasing, Attacking, WaitingForClone, WaitingForMinions, Restoring, Dead }
 
@@ -25,7 +26,7 @@ public class DirectorMondragonAI : MonoBehaviour
 
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 3.2f;
-    [SerializeField] private float stopDistance = 1.4f;
+    [SerializeField] private float stopDistance = 1.3f;
     [SerializeField] private float activationDistance = 14f;
 
     [Header("Combate")]
@@ -47,13 +48,9 @@ public class DirectorMondragonAI : MonoBehaviour
     [Header("Fase 3: Restauración Final (99% de daño / 1% HP)")]
     [SerializeField] private float restoreToPercent = 0.40f;
 
-    [Header("Límites de Calle")]
-    [SerializeField] private float minY = -10.5f;
-    [SerializeField] private float maxY = -5.0f;
-
-    [Header("Collider")]
-    [SerializeField] private Vector2 colliderOffset = new Vector2(0f, -0.1f);
-    [SerializeField] private Vector2 colliderSize = new Vector2(1.1f, 2.0f);
+    [Header("Collider a los Pies")]
+    [SerializeField] private Vector2 colliderOffset = new Vector2(0f, -0.95f);
+    [SerializeField] private Vector2 colliderSize = new Vector2(1.0f, 0.45f);
 
     [Header("Audio y Música")]
     [SerializeField] private AudioClip bossMusic;
@@ -101,7 +98,7 @@ public class DirectorMondragonAI : MonoBehaviour
         CapsuleCollider2D col = GetComponent<CapsuleCollider2D>();
         if (col != null)
         {
-            col.direction = CapsuleDirection2D.Vertical;
+            col.direction = CapsuleDirection2D.Horizontal;
             col.offset = colliderOffset;
             col.size = colliderSize;
         }
@@ -137,15 +134,12 @@ public class DirectorMondragonAI : MonoBehaviour
         GameObject bgmObj = GameObject.Find("Musica_Nivel");
         if (bgmObj != null) bgmSource = bgmObj.GetComponent<AudioSource>();
 
-        DetectStreetLimits();
-
         // Si es un clon, se inicia activo de inmediato
         if (isClone)
         {
             currentState = DirectorState.Chasing;
             if (spriteRenderer != null)
             {
-                // Tinte espectral / azulado para diferenciar la copia
                 spriteRenderer.color = new Color(0.7f, 0.85f, 1f, 0.85f);
             }
         }
@@ -167,12 +161,15 @@ public class DirectorMondragonAI : MonoBehaviour
             return;
         }
 
-        ClampToStreet();
+        // Seguridad para no salir del mapa
+        if (transform.position.y < -11.5f)
+        {
+            transform.position = new Vector3(transform.position.x, -10.0f, transform.position.z);
+        }
 
         // FASE 1: Esperando que el clon sea derrotado
         if (currentState == DirectorState.WaitingForClone)
         {
-            if (rb != null) rb.linearVelocity = Vector2.zero;
             FacePlayer();
 
             bool cloneDead = (activeClone == null || !activeClone.activeInHierarchy);
@@ -193,7 +190,6 @@ public class DirectorMondragonAI : MonoBehaviour
         // FASE 2: Esperando que los secuaces sean derrotados
         if (currentState == DirectorState.WaitingForMinions)
         {
-            if (rb != null) rb.linearVelocity = Vector2.zero;
             FacePlayer();
 
             activeMinions.RemoveAll(m => m == null || !m.activeInHierarchy || (m.TryGetComponent<Health>(out var mh) && mh.IsDead));
@@ -215,13 +211,45 @@ public class DirectorMondragonAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX <= attackRange && distY <= 1.2f && Time.time >= nextAttackTime)
+            if (distX <= attackRange && distY <= 0.75f && Time.time >= nextAttackTime)
             {
                 StartCoroutine(PerformPunchRoutine());
             }
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (currentState == DirectorState.Chasing && playerTransform != null)
+        {
+            float dist = Vector2.Distance(transform.position, playerTransform.position);
+            if (dist > stopDistance)
+            {
+                Vector2 dir = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
+                rb.linearVelocity = dir * moveSpeed;
+
+                if (animator != null)
+                {
+                    animator.SetBool("IsWalking", true);
+                    animator.SetBool("IsDefending", false);
+                }
+            }
             else
             {
-                MoveTowardPlayer();
+                rb.linearVelocity = Vector2.zero;
+                if (animator != null) animator.SetBool("IsWalking", false);
+            }
+        }
+        else if (currentState != DirectorState.Attacking)
+        {
+            if (rb != null) rb.linearVelocity = Vector2.zero;
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", false);
+                if (currentState == DirectorState.WaitingForClone || currentState == DirectorState.WaitingForMinions)
+                {
+                    animator.SetBool("IsDefending", true);
+                }
             }
         }
     }
@@ -249,20 +277,6 @@ public class DirectorMondragonAI : MonoBehaviour
             {
                 cutscene.TriggerCutscene();
             }
-        }
-    }
-
-    private void MoveTowardPlayer()
-    {
-        if (playerTransform == null || rb == null) return;
-
-        Vector2 dir = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
-        rb.linearVelocity = dir * moveSpeed;
-
-        if (animator != null)
-        {
-            animator.SetBool("IsWalking", true);
-            animator.SetBool("IsDefending", false);
         }
     }
 
@@ -294,7 +308,6 @@ public class DirectorMondragonAI : MonoBehaviour
             sfxSource.PlayOneShot(punchSfx);
         }
 
-        // Sincronizar fotograma de impacto
         yield return new WaitForSeconds(0.35f);
 
         if (playerTransform != null && playerHealth != null && !playerHealth.IsDead)
@@ -331,11 +344,9 @@ public class DirectorMondragonAI : MonoBehaviour
 
         float ratio = (float)current / Mathf.Max(1, max);
 
-        // SOLO EL JEFE ORIGINAL EJECUTA LAS FASES ESPECIALES
         if (!isClone)
         {
-            // MECÁNICA 3: Restauración al 99% de daño (al llegar a 1% o menos)
-            // Se ejecuta de inmediato para evitar que Die() sea llamado
+            // MECÁNICA 3: Restauración al 99% de daño
             if (!hasRestoredLife && current <= Mathf.CeilToInt(max * 0.02f))
             {
                 hasRestoredLife = true;
@@ -362,7 +373,6 @@ public class DirectorMondragonAI : MonoBehaviour
             }
         }
 
-        // Hurt regular
         if (currentState != DirectorState.Attacking && currentState != DirectorState.WaitingForClone &&
             currentState != DirectorState.WaitingForMinions && currentState != DirectorState.Restoring)
         {
@@ -388,22 +398,19 @@ public class DirectorMondragonAI : MonoBehaviour
 
         yield return new WaitForSeconds(0.4f);
 
-        // Posición para el clon (del otro lado de Fercho o un desplazamiento)
-        Vector3 clonePos = transform.position + new Vector3(transform.localScale.x > 0 ? 3.0f : -3.0f, 0f, 0f);
+        Vector3 clonePos = transform.position + new Vector3(transform.localScale.x > 0 ? 2.5f : -2.5f, 0f, 0f);
+        clonePos.y = Mathf.Clamp(clonePos.y, -8.0f, -5.2f);
 
         GameObject prefabToSpawn = clonePrefab != null ? clonePrefab : gameObject;
         activeClone = Instantiate(prefabToSpawn, clonePos, Quaternion.identity);
 
-        // Configurar el clon
         if (activeClone.TryGetComponent<DirectorMondragonAI>(out var cloneAI))
         {
             cloneAI.isClone = true;
         }
 
-        // Si tiene componente Health, darle un porcentaje razonable de vida
         if (activeClone.TryGetComponent<Health>(out var cloneHealth))
         {
-            // El clon tiene 80 HP
             cloneHealth.Heal(80);
         }
 
@@ -430,8 +437,8 @@ public class DirectorMondragonAI : MonoBehaviour
             activeMinions.Clear();
             for (int i = 0; i < minionCount; i++)
             {
-                float spawnX = transform.position.x + Random.Range(-4.5f, 4.5f);
-                float spawnY = Mathf.Lerp(minY, maxY, Random.value);
+                float spawnX = transform.position.x + Random.Range(-3.5f, 3.5f);
+                float spawnY = Mathf.Clamp(transform.position.y + Random.Range(-1.2f, 1.2f), -8.0f, -5.2f);
                 Vector3 spawnPos = new Vector3(spawnX, spawnY, 0f);
 
                 GameObject minion = Instantiate(minionPrefab, spawnPos, Quaternion.identity);
@@ -455,9 +462,8 @@ public class DirectorMondragonAI : MonoBehaviour
             animator.SetTrigger("Hurt");
         }
 
-        Debug.Log("[DirectorMondragonAI] ¡RESTAURACIÓN FINAL! El Director Mondragón se niega a caer y recupera el 40% de vida.");
+        Debug.Log("[DirectorMondragonAI] ¡RESTAURACIÓN FINAL! El Director Mondragón recupera el 40% de vida.");
 
-        // Destello dorado de furia
         Color orig = spriteRenderer != null ? spriteRenderer.color : Color.white;
         for (int i = 0; i < 8; i++)
         {
@@ -513,42 +519,6 @@ public class DirectorMondragonAI : MonoBehaviour
         Destroy(gameObject, 3.5f);
     }
 
-    private void DetectStreetLimits()
-    {
-        GameObject limInf = GameObject.Find("Limite_Inferior");
-        GameObject limSup = GameObject.Find("Limite_Superior");
-
-        if (limInf != null && limInf.TryGetComponent<Collider2D>(out var colInf))
-        {
-            minY = colInf.bounds.max.y + 0.15f;
-        }
-
-        if (limSup != null && limSup.TryGetComponent<Collider2D>(out var colSup))
-        {
-            maxY = colSup.bounds.min.y - 0.15f;
-        }
-    }
-
-    private void ClampToStreet()
-    {
-        float cy = Mathf.Clamp(transform.position.y, minY, maxY);
-        if (!Mathf.Approximately(transform.position.y, cy))
-        {
-            transform.position = new Vector3(transform.position.x, cy, transform.position.z);
-        }
-
-        if (rb != null)
-        {
-            float vy = rb.linearVelocity.y;
-            bool atBottom = cy <= minY && vy < 0f;
-            bool atTop = cy >= maxY && vy > 0f;
-            if (atBottom || atTop)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-            }
-        }
-    }
-
     private void OnDestroy()
     {
         if (health != null)
@@ -557,9 +527,4 @@ public class DirectorMondragonAI : MonoBehaviour
             health.OnDeath -= HandleDeath;
         }
     }
-
-    // Setters para inicialización dinámica si es necesario
-    public void SetClonePrefab(GameObject prefab) => clonePrefab = prefab;
-    public void SetMinionPrefab(GameObject prefab) => minionPrefab = prefab;
 }
-
