@@ -150,113 +150,15 @@ TextureImporter:
       name: Director_Punch_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 288
-        height: 256
+        x: 46
+        y: 2
+        width: 99
+        height: 166
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 203d2347b961cd9c0800000000000000
-      internalID: -3901218320284462334
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Director_Punch_1
-      rect:
-        serializedVersion: 2
-        x: 288
-        y: 0
-        width: 288
-        height: 256
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 773035a46cfc6f130800000000000000
-      internalID: 3600293402686718839
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Director_Punch_2
-      rect:
-        serializedVersion: 2
-        x: 576
-        y: 0
-        width: 288
-        height: 256
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e81b8ca60b2496a70800000000000000
-      internalID: 3979414409068276679
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Director_Punch_3
-      rect:
-        serializedVersion: 2
-        x: 864
-        y: 0
-        width: 288
-        height: 256
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 04e9e0c704f0d32b0800000000000000
-      internalID: -6031373096030298367
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Director_Punch_5
-      rect:
-        serializedVersion: 2
-        x: 1152
-        y: 0
-        width: 288
-        height: 256
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 64fc7960ea546bc20800000000000000
-      internalID: 8222250598217360463
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-  outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
