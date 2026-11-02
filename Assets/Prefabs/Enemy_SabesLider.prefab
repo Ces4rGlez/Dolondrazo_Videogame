@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1000000000000006}
   - component: {fileID: 1000000000000007}
   - component: {fileID: 1000000000000008}
+  - component: {fileID: 1000000000000009}
   m_Layer: 7
   m_Name: Enemy_SabesLider
   m_TagString: Untagged
@@ -223,3 +224,19 @@ MonoBehaviour:
   maxY: -5
   colliderOffset: {x: 0, y: -0.1}
   colliderSize: {x: 1.2, y: 2.1}
+--- !u!114 &1000000000000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e14f64bfeab5462b87c38291d2b3599, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossCutsceneSabesLider
+  ferChoPortrait: {fileID: 0}
+  bossPortrait: {fileID: -1699580883750404948, guid: e70e0ceee77142f4c87a4c9a0be8c400, type: 3}
+  ferChoColor: {r: 0.25, g: 0.82, b: 1, a: 1}
+  bossColor: {r: 1, g: 0.75, b: 0.1, a: 1}

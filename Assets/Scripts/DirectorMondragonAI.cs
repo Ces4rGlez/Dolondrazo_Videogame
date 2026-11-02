@@ -244,6 +244,11 @@ public class DirectorMondragonAI : MonoBehaviour
                 bgmSource.clip = bossMusic;
                 bgmSource.Play();
             }
+
+            if (TryGetComponent<BossCutsceneDirector>(out var cutscene))
+            {
+                cutscene.TriggerCutscene();
+            }
         }
     }
 
@@ -557,3 +562,4 @@ public class DirectorMondragonAI : MonoBehaviour
     public void SetClonePrefab(GameObject prefab) => clonePrefab = prefab;
     public void SetMinionPrefab(GameObject prefab) => minionPrefab = prefab;
 }
+

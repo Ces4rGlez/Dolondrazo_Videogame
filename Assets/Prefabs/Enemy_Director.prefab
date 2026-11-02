@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1000000000000006}
   - component: {fileID: 1000000000000007}
   - component: {fileID: 1000000000000008}
+  - component: {fileID: 1000000000000009}
   m_Layer: 7
   m_Name: Enemy_Director
   m_TagString: Untagged
@@ -225,3 +226,19 @@ MonoBehaviour:
   colliderSize: {x: 1.1, y: 2}
   bossMusic: {fileID: 0}
   victoryMusic: {fileID: 0}
+--- !u!114 &1000000000000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f554de8d6f2523c9de78e11e8ca096e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossCutsceneDirector
+  ferChoPortrait: {fileID: 0}
+  bossPortrait: {fileID: 7966342568546776865, guid: cad46d6e5620d3d4f9547a791bf28064, type: 3}
+  ferChoColor: {r: 0.25, g: 0.82, b: 1, a: 1}
+  bossColor: {r: 1, g: 0.35, b: 0.35, a: 1}

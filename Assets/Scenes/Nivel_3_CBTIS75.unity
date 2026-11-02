@@ -2205,28 +2205,37 @@ MonoBehaviour:
     - enemyPrefab: {fileID: 1000000000000001, guid: 3b41ce92641d469cafb06573fae8639f, type: 3}
       spawnPoint: {fileID: 576201463}
       count: 2
-    cameraLockX: 16
-    cameraMaxX: 16
+    cameraLockX: 15
+    cameraMaxX: 15
     triggerBusHazard: 1
     busHazardDelay: 6
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}
-  - waveTitle: CAMPAL DE TRES ESCUELAS
-    waveSubtitle: '!CECyTE, Rebsamen y SABES acorralan la entrada!'
+  - waveTitle: DUELO CON EL PREFECTO
+    waveSubtitle: '!El Lider del SABES defiende la entrada con puno de hierro!'
     spawns:
-    - enemyPrefab: {fileID: 4495878201029733911, guid: a39ca3c348994a846acdc8e8a4f7f25a, type: 3}
-      spawnPoint: {fileID: 341214651}
-      count: 2
-    - enemyPrefab: {fileID: 1000000000000001, guid: 5b886e02d0e74925a13f8fe58dc62b2b, type: 3}
-      spawnPoint: {fileID: 2051365166}
-      count: 2
+    - enemyPrefab: {fileID: 1000000000000001, guid: 19c149e403cf58aca095e02d6e7c6c87, type: 3}
+      spawnPoint: {fileID: 576201463}
+      count: 1
     - enemyPrefab: {fileID: 1000000000000001, guid: 3b41ce92641d469cafb06573fae8639f, type: 3}
-      spawnPoint: {fileID: 573220478}
-      count: 2
-    cameraLockX: 24.5
-    cameraMaxX: 24.5
+      spawnPoint: {fileID: 1921289122}
+      count: 1
+    cameraLockX: 20
+    cameraMaxX: 20
     triggerBusHazard: 1
-    busHazardDelay: 7
+    busHazardDelay: 8
+    rewardPickup: {fileID: 0}
+    rewardSpawnPoint: {fileID: 0}
+  - waveTitle: LA MAXIMA AUTORIDAD
+    waveSubtitle: '!El Director Mondragon sale a defender sus cuotas ilegales!'
+    spawns:
+    - enemyPrefab: {fileID: 1000000000000001, guid: 6f3acca6f8405bee9af08874c6c28011, type: 3}
+      spawnPoint: {fileID: 573220478}
+      count: 1
+    cameraLockX: 25.5
+    cameraMaxX: 25.5
+    triggerBusHazard: 0
+    busHazardDelay: 0
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}
   prefabSabes: {fileID: 1000000000000001, guid: 3b41ce92641d469cafb06573fae8639f, type: 3}
@@ -2325,7 +2334,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1405168889
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2335,9 +2344,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1405168888}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8d4095257bf4bd4b8c43fc738dd1873, type: 3}
+  m_Script: {fileID: 11500000, guid: c51556f08c405be4b575bb74a5d083eb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IntroCutscene
+  m_EditorClassIdentifier: Assembly-CSharp::IntroCutsceneNivel3
   ferChoPortrait: {fileID: 177728572, guid: a104809e6c0eb354690d89b87cf4a5d8, type: 3}
   enemyPortrait: {fileID: 6200617796867617603, guid: acd4cc363e2761c4ca49a44300ab20fc, type: 3}
   ferChoColor: {r: 0.3, g: 0.75, b: 1, a: 1}

@@ -10,6 +10,7 @@ using UnityEngine;
 ///   - Auto-curación al 60% de daño recibido (40% de vida restante): se recupera vida a sí mismo una sola vez.
 ///   - Hiperarmadura durante ataques para no ser interrumpido con facilidad.
 ///   - Integración con BossHUD para mostrar su barra de vida en el HUD.
+///   - Música y diálogo de cinemática personalizables.
 /// </summary>
 public enum SabesLiderState { Dormant, Idle, Chasing, Attacking, Healing, Dead }
 
@@ -29,9 +30,13 @@ public class SabesLiderAI : MonoBehaviour
     [SerializeField] private int kickDamage = 42;
     [SerializeField] private float punchKnockback = 5.5f;
     [SerializeField] private float kickKnockback = 7.5f;
+
+    [Header("Audio y Música")]
     [SerializeField] private AudioClip punchSfx;
     [SerializeField] private AudioClip kickSfx;
     [SerializeField] private AudioClip healSfx;
+    [SerializeField] private AudioClip bossMusic;
+    [SerializeField] private AudioClip victoryMusic;
 
     [Header("Habilidad Especial: Auto-Curación")]
     [Tooltip("Umbral de vida restante para activar la curación (0.4 = tras perder el 60% de vida)")]
@@ -92,7 +97,6 @@ public class SabesLiderAI : MonoBehaviour
 
     private void Start()
     {
-        // Buscar a Fercho
         PlayerController player = FindFirstObjectByType<PlayerController>();
         if (player != null)
         {
@@ -163,6 +167,21 @@ public class SabesLiderAI : MonoBehaviour
         if (hud != null && health != null)
         {
             hud.ActivateBossBar(health, bossName);
+        }
+
+        if (bossMusic != null)
+        {
+            GameObject bgmObj = GameObject.Find("Musica_Nivel");
+            if (bgmObj != null && bgmObj.TryGetComponent<AudioSource>(out var bgm))
+            {
+                bgm.clip = bossMusic;
+                bgm.Play();
+            }
+        }
+
+        if (TryGetComponent<BossCutsceneSabesLider>(out var cutscene))
+        {
+            cutscene.TriggerCutscene();
         }
     }
 
@@ -341,6 +360,16 @@ public class SabesLiderAI : MonoBehaviour
         }
 
         Debug.Log($"[SabesLiderAI] ¡{bossName} HA SIDO DERROTADO!");
+
+        if (victoryMusic != null)
+        {
+            GameObject bgmObj = GameObject.Find("Musica_Nivel");
+            if (bgmObj != null && bgmObj.TryGetComponent<AudioSource>(out var bgm))
+            {
+                bgm.clip = victoryMusic;
+                bgm.Play();
+            }
+        }
 
         // Ocultar barra de jefe en HUD
         GameObject bossBar = GameObject.Find("Boss_Health_HUD");
