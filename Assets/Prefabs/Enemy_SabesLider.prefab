@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &1000000000000001
 GameObject:
@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 1000000000000007}
   - component: {fileID: 1000000000000008}
   - component: {fileID: 1000000000000009}
+  - component: {fileID: 1000000000000010}
   m_Layer: 7
   m_Name: Enemy_SabesLider
   m_TagString: Untagged
@@ -238,3 +239,40 @@ MonoBehaviour:
   bossPortrait: {fileID: -1699580883750404948, guid: e70e0ceee77142f4c87a4c9a0be8c400, type: 3}
   ferChoColor: {r: 0.25, g: 0.82, b: 1, a: 1}
   bossColor: {r: 1, g: 0.75, b: 0.1, a: 1}
+--- !u!61 &1000000000000010
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000001}
+  m_Enabled: 1
+  serializedVersion: 8
+  m_Density: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 1.0, y: 1.6}
+  m_EdgeRadius: 0
