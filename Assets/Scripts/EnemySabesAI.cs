@@ -283,8 +283,11 @@ public class EnemySabesAI : MonoBehaviour
         int damageTaken = lastHealthRecorded - current;
         lastHealthRecorded = current;
 
-        // Si estaba en plena esquiva: anula el daño (esquiva perfecta)
-        if (isDodging && damageTaken > 0)
+        // CRITICO: Ignorar curaciones o cambios sin dano (evita que Heal() vuelva a disparar Hurt!)
+        if (damageTaken <= 0) return;
+
+        // Si estaba en plena esquiva: anula el dano (esquiva perfecta)
+        if (isDodging)
         {
             if (health != null)
             {
@@ -295,7 +298,7 @@ public class EnemySabesAI : MonoBehaviour
         }
 
         // Si NO esta en cooldown y salta la probabilidad: Esquiva en lugar de recibir el golpe
-        if (Time.time >= nextDodgeTime && Random.value <= dodgeChance && damageTaken > 0)
+        if (Time.time >= nextDodgeTime && Random.value <= dodgeChance)
         {
             // Revertir el golpe y esquivar
             if (health != null)
@@ -303,15 +306,13 @@ public class EnemySabesAI : MonoBehaviour
                 health.Heal(damageTaken);
                 lastHealthRecorded = health.CurrentHealth;
             }
-            // Restaurar color inmediatamente para contrarrestar el FlashRed de Health.cs
-            // Health.FlashRedRoutine cambia color a rojo - lo cancelamos con color original
             if (spriteRenderer != null)
                 spriteRenderer.color = Color.white;
             TriggerDodge();
             return;
         }
 
-        // Si no esquivó: recibe el impacto normalmente
+        // Si no esquivo: recibe el impacto normalmente y reproduce la animacion de golpe
         currentState = SabesState.Stunned;
         if (animator != null) animator.SetTrigger("Hurt");
 
