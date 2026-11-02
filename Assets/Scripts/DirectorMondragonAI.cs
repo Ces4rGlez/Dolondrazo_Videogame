@@ -160,6 +160,8 @@ public class DirectorMondragonAI : MonoBehaviour
             {
                 Debug.Log("[DirectorMondragonAI] El clon ha sido destruido. El Director retoma el combate.");
                 if (animator != null) animator.SetBool("IsDefending", false);
+                // Descongelar posicion para que el Director pueda moverse de nuevo
+                if (rb != null) rb.constraints = RigidbodyConstraints2D.FreezeRotation;
                 currentState = DirectorState.Chasing;
             }
             return;
@@ -403,7 +405,12 @@ public class DirectorMondragonAI : MonoBehaviour
     private IEnumerator SpawnClonePhaseRoutine()
     {
         currentState = DirectorState.WaitingForClone;
-        if (rb != null) rb.linearVelocity = Vector2.zero;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            // Congelar posicion completamente: el original no puede moverse mientras el clon pelea
+            rb.constraints = RigidbodyConstraints2D.FreezePosition | RigidbodyConstraints2D.FreezeRotation;
+        }
 
         if (animator != null)
         {
