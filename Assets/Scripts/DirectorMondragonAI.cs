@@ -211,7 +211,7 @@ public class DirectorMondragonAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX <= attackRange && distY <= 0.75f && Time.time >= nextAttackTime)
+            if (distX <= attackRange && distY <= 1.8f && Time.time >= nextAttackTime)
             {
                 StartCoroutine(PerformPunchRoutine());
             }
@@ -222,12 +222,30 @@ public class DirectorMondragonAI : MonoBehaviour
     {
         if (currentState == DirectorState.Chasing && playerTransform != null)
         {
-            float dist = Vector2.Distance(transform.position, playerTransform.position);
-            if (dist > stopDistance)
-            {
-                Vector2 dir = ((Vector2)playerTransform.position - (Vector2)transform.position).normalized;
-                rb.linearVelocity = dir * moveSpeed;
+            float dx = playerTransform.position.x - transform.position.x;
+            float dy = playerTransform.position.y - transform.position.y;
+            float absDx = Mathf.Abs(dx);
+            float absDy = Mathf.Abs(dy);
 
+            float vx = 0f;
+            float vy = 0f;
+
+            // Alineacion vertical: persigue a Fercho en Y igual que SabesLider
+            if (absDy > 0.35f)
+            {
+                vy = Mathf.Sign(dy) * moveSpeed;
+            }
+
+            // Acercamiento horizontal hasta stopDistance
+            if (absDx > stopDistance)
+            {
+                vx = Mathf.Sign(dx) * moveSpeed;
+            }
+
+            Vector2 moveDir = new Vector2(vx, vy);
+            if (moveDir.sqrMagnitude > 0.01f)
+            {
+                rb.linearVelocity = moveDir.normalized * moveSpeed;
                 if (animator != null)
                 {
                     animator.SetBool("IsWalking", true);
@@ -315,7 +333,7 @@ public class DirectorMondragonAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX <= attackRange + 0.4f && distY <= 1.4f)
+            if (distX <= attackRange + 0.4f && distY <= 1.8f)
             {
                 Vector2 kbDir = (playerTransform.position - transform.position).normalized;
                 playerHealth.TakeDamage(punchDamage, kbDir, knockbackForce);

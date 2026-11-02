@@ -145,7 +145,7 @@ public class SabesLiderAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX <= attackRange && distY <= 0.75f && Time.time >= nextAttackTime)
+            if (distX <= attackRange && distY <= 1.8f && Time.time >= nextAttackTime)
             {
                 StartCoroutine(PerformAttackRoutine());
             }
@@ -272,7 +272,7 @@ public class SabesLiderAI : MonoBehaviour
             float distX = Mathf.Abs(transform.position.x - playerTransform.position.x);
             float distY = Mathf.Abs(transform.position.y - playerTransform.position.y);
 
-            if (distX <= attackRange + 0.4f && distY <= 1.5f)
+            if (distX <= attackRange + 0.4f && distY <= 1.8f)
             {
                 Vector2 kbDir = (playerTransform.position - transform.position).normalized;
                 playerHealth.TakeDamage(currentDmg, kbDir, currentKb);
