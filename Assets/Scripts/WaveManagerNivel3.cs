@@ -174,11 +174,13 @@ public class WaveManagerNivel3 : MonoBehaviour
 
             for (int i = 0; i < entry.count; i++)
             {
-                Vector3 spawnPos = basePos + new Vector3(
-                    Random.Range(-0.45f, 0.45f),
-                    Random.Range(-0.25f, 0.25f),
-                    0f
-                );
+                Vector3 spawnPos = (entry.count == 1)
+                    ? basePos
+                    : basePos + new Vector3(
+                        Random.Range(-0.45f, 0.45f),
+                        Random.Range(-0.25f, 0.25f),
+                        0f
+                    );
 
                 GameObject enemy = Instantiate(prefabToUse, spawnPos, Quaternion.identity);
                 activeEnemies.Add(enemy);
@@ -230,6 +232,26 @@ public class WaveManagerNivel3 : MonoBehaviour
                 {
                     Health h = enemy.GetComponent<Health>();
                     if (h != null && !h.IsDead)
+                    {
+                        anyAlive = true;
+                        break;
+                    }
+                }
+            }
+
+            // Verificacion exhaustiva: confirmar que NO haya secuaces, clones ni enemigos vivos en la escena
+            if (!anyAlive)
+            {
+                Health[] allHealths = FindObjectsByType<Health>(FindObjectsSortMode.None);
+                foreach (var h in allHealths)
+                {
+                    if (h == null || !h.gameObject.activeInHierarchy || h.IsDead) continue;
+                    if (h.CompareTag("Player") || h.GetComponent<PlayerController>() != null) continue;
+
+                    if (h.gameObject.layer == 7 || h.CompareTag("Enemy") ||
+                        h.GetComponent<EnemyAI>() != null || h.GetComponent<EnemySabesAI>() != null ||
+                        h.GetComponent<EnemyRebsamenAI>() != null || h.GetComponent<DirectorMondragonAI>() != null ||
+                        h.GetComponent<SabesLiderAI>() != null)
                     {
                         anyAlive = true;
                         break;

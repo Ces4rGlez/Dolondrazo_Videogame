@@ -503,12 +503,13 @@ public class DirectorMondragonAI : MonoBehaviour
                 ScoreManager.Instance.RegisterBossDefeated();
             }
 
-            Debug.Log("[DirectorMondragonAI] ¡EL DIRECTOR MONDRAGÓN HA SIDO DERROTADO DEFINITIVAMENTE!");
+            Debug.Log("[DirectorMondragonAI] EL DIRECTOR MONDRAGON HA SIDO DERROTADO DEFINITIVAMENTE!");
 
-            BossHUD hud = FindFirstObjectByType<BossHUD>();
-            if (hud != null)
+            // Ocultar barra de jefe en HUD
+            GameObject bossBar = GameObject.Find("Boss_Health_HUD");
+            if (bossBar != null)
             {
-                hud.TriggerVictorySequence(victoryMusic, bgmSource);
+                bossBar.SetActive(false);
             }
         }
         else

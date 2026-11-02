@@ -30,6 +30,7 @@ public class BusHazard : MonoBehaviour
     [SerializeField] private AudioClip engineSound;
     [SerializeField] private AudioClip brakesSound;
     [SerializeField] private AudioClip doorSound;
+    [SerializeField] private AudioClip victoryMusic;
 
     [Header("Limites de Recorrido")]
     [SerializeField] private float leftSpawnX = -32.0f;
@@ -44,12 +45,14 @@ public class BusHazard : MonoBehaviour
 
     private Vector2 targetParkPos;
     private bool playerCanBoard = false;
+    private Coroutine promptPulseCoroutine;
 
     // UI de Alerta y Abordaje
     private GameObject warningBannerObj;
     private Text warningText;
     private GameObject boardPromptObj;
     private Text boardPromptText;
+    private Image boardPromptBg;
 
     public BusMode CurrentMode => currentMode;
 
@@ -76,15 +79,27 @@ public class BusHazard : MonoBehaviour
 
     private void Start()
     {
-        SetupUI();
+        EnsureUI();
         transform.position = new Vector3(leftSpawnX, defaultLaneY, 0f);
         currentMode = BusMode.Inactive;
     }
 
-    private void SetupUI()
+    private void EnsureUI()
     {
+        if (boardPromptObj != null && warningBannerObj != null) return;
+
         Canvas canvas = FindFirstObjectByType<Canvas>();
-        if (canvas == null) return;
+        if (canvas == null)
+        {
+            GameObject canvasObj = new GameObject("HUD_Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvas = canvasObj.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 999;
+            CanvasScaler scaler = canvasObj.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            scaler.matchWidthOrHeight = 0.5f;
+        }
 
         Texture2D tex = new Texture2D(4, 4);
         Color[] px = new Color[16];
@@ -93,64 +108,83 @@ public class BusHazard : MonoBehaviour
         Sprite white = Sprite.Create(tex, new Rect(0,0,4,4), new Vector2(0.5f,0.5f));
 
         // 1. Banner de Alerta de Atropello
-        warningBannerObj = new GameObject("Bus_WarningBanner", typeof(RectTransform), typeof(Image));
-        warningBannerObj.transform.SetParent(canvas.transform, false);
-        RectTransform rt = warningBannerObj.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.78f);
-        rt.anchorMax = new Vector2(0.5f, 0.78f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = Vector2.zero;
-        rt.sizeDelta = new Vector2(580f, 60f);
+        if (warningBannerObj == null)
+        {
+            warningBannerObj = new GameObject("Bus_WarningBanner", typeof(RectTransform), typeof(Image));
+            warningBannerObj.transform.SetParent(canvas.transform, false);
+            RectTransform rt = warningBannerObj.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.78f);
+            rt.anchorMax = new Vector2(0.5f, 0.78f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(580f, 60f);
 
-        Image img = warningBannerObj.GetComponent<Image>();
-        img.sprite = white;
-        img.color = new Color(0.85f, 0.15f, 0.15f, 0.90f);
+            Image img = warningBannerObj.GetComponent<Image>();
+            img.sprite = white;
+            img.color = new Color(0.85f, 0.15f, 0.15f, 0.90f);
 
-        GameObject wt = new GameObject("WarningText", typeof(RectTransform), typeof(Text));
-        wt.transform.SetParent(warningBannerObj.transform, false);
-        RectTransform rtt = wt.GetComponent<RectTransform>();
-        rtt.anchorMin = Vector2.zero;
-        rtt.anchorMax = Vector2.one;
-        rtt.sizeDelta = Vector2.zero;
-        warningText = wt.GetComponent<Text>();
-        warningText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        warningText.fontSize = 22;
-        warningText.fontStyle = FontStyle.Bold;
-        warningText.alignment = TextAnchor.MiddleCenter;
-        warningText.color = Color.white;
-        warningText.text = "!CUIDADO! !AUTOBUS APROXIMANDOSE!";
+            GameObject wt = new GameObject("WarningText", typeof(RectTransform), typeof(Text));
+            wt.transform.SetParent(warningBannerObj.transform, false);
+            RectTransform rtt = wt.GetComponent<RectTransform>();
+            rtt.anchorMin = Vector2.zero;
+            rtt.anchorMax = Vector2.one;
+            rtt.sizeDelta = Vector2.zero;
+            warningText = wt.GetComponent<Text>();
+            warningText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            warningText.fontSize = 22;
+            warningText.fontStyle = FontStyle.Bold;
+            warningText.alignment = TextAnchor.MiddleCenter;
+            warningText.color = Color.white;
+            warningText.text = "!CUIDADO! !AUTOBUS APROXIMANDOSE!";
 
-        warningBannerObj.SetActive(false);
+            warningBannerObj.SetActive(false);
+        }
 
-        // 2. Prompt de abordaje
-        boardPromptObj = new GameObject("Bus_BoardPrompt", typeof(RectTransform), typeof(Image));
-        boardPromptObj.transform.SetParent(canvas.transform, false);
-        RectTransform rtb = boardPromptObj.GetComponent<RectTransform>();
-        rtb.anchorMin = new Vector2(0.5f, 0.25f);
-        rtb.anchorMax = new Vector2(0.5f, 0.25f);
-        rtb.pivot = new Vector2(0.5f, 0.5f);
-        rtb.anchoredPosition = Vector2.zero;
-        rtb.sizeDelta = new Vector2(480f, 55f);
+        // 2. Prompt de abordaje (Presionar [E])
+        if (boardPromptObj == null)
+        {
+            boardPromptObj = new GameObject("Bus_BoardPrompt", typeof(RectTransform), typeof(Image));
+            boardPromptObj.transform.SetParent(canvas.transform, false);
+            RectTransform rtb = boardPromptObj.GetComponent<RectTransform>();
+            rtb.anchorMin = new Vector2(0.5f, 0.22f);
+            rtb.anchorMax = new Vector2(0.5f, 0.22f);
+            rtb.pivot = new Vector2(0.5f, 0.5f);
+            rtb.anchoredPosition = Vector2.zero;
+            rtb.sizeDelta = new Vector2(540f, 65f);
 
-        Image imgb = boardPromptObj.GetComponent<Image>();
-        imgb.sprite = white;
-        imgb.color = new Color(0.1f, 0.65f, 0.25f, 0.92f);
+            boardPromptBg = boardPromptObj.GetComponent<Image>();
+            boardPromptBg.sprite = white;
+            boardPromptBg.color = new Color(0.08f, 0.65f, 0.22f, 0.95f);
 
-        GameObject bt = new GameObject("BoardText", typeof(RectTransform), typeof(Text));
-        bt.transform.SetParent(boardPromptObj.transform, false);
-        RectTransform rtbText = bt.GetComponent<RectTransform>();
-        rtbText.anchorMin = Vector2.zero;
-        rtbText.anchorMax = Vector2.one;
-        rtbText.sizeDelta = Vector2.zero;
-        boardPromptText = bt.GetComponent<Text>();
-        boardPromptText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        boardPromptText.fontSize = 20;
-        boardPromptText.fontStyle = FontStyle.Bold;
-        boardPromptText.alignment = TextAnchor.MiddleCenter;
-        boardPromptText.color = Color.white;
-        boardPromptText.text = ">> [E] SUBIR AL AUTOBUS (CONTINUAR) <<";
+            // Borde superior decorativo dorado
+            GameObject borderTop = new GameObject("GoldBorder", typeof(RectTransform), typeof(Image));
+            borderTop.transform.SetParent(boardPromptObj.transform, false);
+            RectTransform rtbt = borderTop.GetComponent<RectTransform>();
+            rtbt.anchorMin = new Vector2(0f, 1f);
+            rtbt.anchorMax = new Vector2(1f, 1f);
+            rtbt.pivot = new Vector2(0.5f, 1f);
+            rtbt.anchoredPosition = Vector2.zero;
+            rtbt.sizeDelta = new Vector2(0f, 4f);
+            Image bImg = borderTop.GetComponent<Image>();
+            bImg.sprite = white;
+            bImg.color = new Color(1f, 0.88f, 0.2f, 1f);
 
-        boardPromptObj.SetActive(false);
+            GameObject bt = new GameObject("BoardText", typeof(RectTransform), typeof(Text));
+            bt.transform.SetParent(boardPromptObj.transform, false);
+            RectTransform rtbText = bt.GetComponent<RectTransform>();
+            rtbText.anchorMin = Vector2.zero;
+            rtbText.anchorMax = Vector2.one;
+            rtbText.sizeDelta = Vector2.zero;
+            boardPromptText = bt.GetComponent<Text>();
+            boardPromptText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            boardPromptText.fontSize = 22;
+            boardPromptText.fontStyle = FontStyle.Bold;
+            boardPromptText.alignment = TextAnchor.MiddleCenter;
+            boardPromptText.color = Color.white;
+            boardPromptText.text = ">> PRESIONA [E] PARA SUBIR AL AUTOBUS <<";
+
+            boardPromptObj.SetActive(false);
+        }
     }
 
     /// <summary>
@@ -159,8 +193,9 @@ public class BusHazard : MonoBehaviour
     public void TriggerPassingHazard(float laneY = 0f)
     {
         if (currentMode != BusMode.Inactive) return;
-        if (laneY == 0f) laneY = defaultLaneY;  // usa el valor del Inspector si no se especifica
+        if (laneY == 0f) laneY = defaultLaneY;
         gameObject.SetActive(true);
+        EnsureUI();
         StartCoroutine(PassingHazardRoutine(laneY));
     }
 
@@ -194,6 +229,7 @@ public class BusHazard : MonoBehaviour
     {
         gameObject.SetActive(true);
         targetParkPos = parkPosition;
+        EnsureUI();
         StartCoroutine(ArrivalRoutine());
     }
 
@@ -220,9 +256,33 @@ public class BusHazard : MonoBehaviour
 
         currentMode = BusMode.Parked;
         playerCanBoard = true;
-        if (boardPromptObj != null) boardPromptObj.SetActive(true);
 
-        Debug.Log("[BusHazard] !Autobus estacionado! Fercho puede subir con [E].");
+        EnsureUI();
+        if (boardPromptObj != null)
+        {
+            boardPromptObj.SetActive(true);
+            boardPromptObj.transform.SetAsLastSibling();
+            if (promptPulseCoroutine != null) StopCoroutine(promptPulseCoroutine);
+            promptPulseCoroutine = StartCoroutine(PulsePromptRoutine());
+        }
+
+        Debug.Log("[BusHazard] Autobus estacionado frente al CBTis 75. Presiona [E] para subir.");
+    }
+
+    private IEnumerator PulsePromptRoutine()
+    {
+        Color colorA = new Color(0.08f, 0.65f, 0.22f, 0.95f);
+        Color colorB = new Color(0.15f, 0.85f, 0.35f, 1f);
+
+        while (playerCanBoard)
+        {
+            if (boardPromptBg != null)
+            {
+                float t = Mathf.PingPong(Time.time * 2.5f, 1f);
+                boardPromptBg.color = Color.Lerp(colorA, colorB, t);
+            }
+            yield return null;
+        }
     }
 
     private void Update()
@@ -232,8 +292,9 @@ public class BusHazard : MonoBehaviour
             var keyboard = Keyboard.current;
             var gamepad = Gamepad.current;
 
-            bool boardPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
-                             || (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame);
+            bool boardPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame))
+                             || (gamepad != null && (gamepad.buttonSouth.wasPressedThisFrame || gamepad.buttonWest.wasPressedThisFrame))
+                             || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return);
 
             if (boardPressed)
             {
@@ -245,6 +306,7 @@ public class BusHazard : MonoBehaviour
     private IEnumerator BoardAndDepartRoutine()
     {
         playerCanBoard = false;
+        if (promptPulseCoroutine != null) StopCoroutine(promptPulseCoroutine);
         if (boardPromptObj != null) boardPromptObj.SetActive(false);
 
         PlayerController p = FindFirstObjectByType<PlayerController>();
@@ -268,7 +330,7 @@ public class BusHazard : MonoBehaviour
         BossHUD hud = FindFirstObjectByType<BossHUD>();
         if (hud != null)
         {
-            hud.TriggerVictorySequence(null, null);
+            hud.TriggerVictorySequence(victoryMusic, null);
         }
     }
 
