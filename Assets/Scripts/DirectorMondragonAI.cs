@@ -147,6 +147,24 @@ public class DirectorMondragonAI : MonoBehaviour
 
     private void Update()
     {
+        // El original permanece inmóvil mientras el clon está activo
+        if (currentState == DirectorState.WaitingForClone)
+        {
+            if (rb != null) rb.linearVelocity = Vector2.zero;
+            bool cloneDead = (activeClone == null || !activeClone.activeInHierarchy);
+            if (!cloneDead && activeClone.TryGetComponent<Health>(out var cloneH))
+            {
+                if (cloneH.IsDead) cloneDead = true;
+            }
+            if (cloneDead)
+            {
+                Debug.Log("[DirectorMondragonAI] El clon ha sido destruido. El Director retoma el combate.");
+                if (animator != null) animator.SetBool("IsDefending", false);
+                currentState = DirectorState.Chasing;
+            }
+            return;
+        }
+
         if (currentState == DirectorState.Dead || currentState == DirectorState.Restoring || playerTransform == null)
             return;
 
@@ -167,25 +185,6 @@ public class DirectorMondragonAI : MonoBehaviour
             transform.position = new Vector3(transform.position.x, -10.0f, transform.position.z);
         }
 
-        // FASE 1: Esperando que el clon sea derrotado
-        if (currentState == DirectorState.WaitingForClone)
-        {
-            FacePlayer();
-
-            bool cloneDead = (activeClone == null || !activeClone.activeInHierarchy);
-            if (!cloneDead && activeClone.TryGetComponent<Health>(out var cloneH))
-            {
-                if (cloneH.IsDead) cloneDead = true;
-            }
-
-            if (cloneDead)
-            {
-                Debug.Log("[DirectorMondragonAI] ¡El clon ha sido destruido! El Director original retoma el combate.");
-                if (animator != null) animator.SetBool("IsDefending", false);
-                currentState = DirectorState.Chasing;
-            }
-            return;
-        }
 
         // FASE 2: Esperando que los secuaces sean derrotados
         if (currentState == DirectorState.WaitingForMinions)
@@ -365,7 +364,7 @@ public class DirectorMondragonAI : MonoBehaviour
         if (!isClone)
         {
             // MECÁNICA 3: Restauración al 99% de daño
-            if (!hasRestoredLife && current <= Mathf.CeilToInt(max * 0.02f))
+            if (!hasRestoredLife && current <= Mathf.RoundToInt(max * 0.20f))
             {
                 hasRestoredLife = true;
                 int restoreHp = Mathf.RoundToInt(max * restoreToPercent);
