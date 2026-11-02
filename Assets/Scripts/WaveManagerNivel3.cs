@@ -76,7 +76,7 @@ public class WaveManagerNivel3 : MonoBehaviour
 
         SetupWaveBannerUI();
 
-        if (reglaTPrefab != null)
+        if (reglaTPrefab != null && FindFirstObjectByType<EquippableWeapon>() == null)
         {
             Vector3 spawnPos = reglaTSpawnPoint != null ? reglaTSpawnPoint.position : new Vector3(2.5f, -7.5f, 0f);
             Instantiate(reglaTPrefab, spawnPos, Quaternion.identity);
