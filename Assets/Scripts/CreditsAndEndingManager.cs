@@ -78,15 +78,19 @@ public class CreditsAndEndingManager : MonoBehaviour
 
     private void Start()
     {
-        // Si no se asigno musica, buscar Intro.mp3 en Resources o cargar AudioSource existente
         if (creditsMusic == null)
-        {
+            creditsMusic = Resources.Load<AudioClip>("Sounds/Junior H - Mente Positiva (Letra_Lyric Video) 2020");
+        if (creditsMusic == null)
             creditsMusic = Resources.Load<AudioClip>("Sounds/Intro");
-        }
-
+        PlayEndingMusic();
         EnsureCanvas();
         StartEpilogue();
     }
+
+
+
+
+
 
     private void Update()
     {
@@ -101,7 +105,7 @@ public class CreditsAndEndingManager : MonoBehaviour
                 if (busTransform != null)
                 {
                     float wobble = Mathf.Sin(Time.time * 6f) * 3f;
-                    busTransform.anchoredPosition = new Vector2(busTransform.anchoredPosition.x, -260f + wobble);
+                    busTransform.anchoredPosition = new Vector2(-600f, -260f + wobble);
                 }
 
                 // Acelerar creditos si se mantiene pulsado Espacio o flecha abajo
@@ -230,21 +234,48 @@ public class CreditsAndEndingManager : MonoBehaviour
     public void StartCredits()
     {
         if (epilogueRoot != null) Destroy(epilogueRoot);
-
         BuildCreditsUI();
         isRollingCredits = true;
+        PlayEndingMusic();
+    }
 
-        if (audioSource != null && creditsMusic != null)
+
+
+
+
+
+
+    
+    private void PlayEndingMusic()
+    {
+        if (creditsMusic == null) return;
+
+        if (AudioManager.Instance != null)
         {
+            AudioManager.Instance.PlayBGM(creditsMusic, true);
+        }
+        else
+        {
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.loop = true;
+                audioSource.playOnAwake = false;
+            }
             audioSource.clip = creditsMusic;
+            audioSource.volume = 1f;
             audioSource.Play();
         }
     }
-
     public void ReturnToMenu()
     {
         Time.timeScale = 1f;
+        if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
+        if (audioSource != null) audioSource.Stop();
+        if (canvas != null) Destroy(canvas.gameObject);
+        Destroy(gameObject);
         LevelTransitionLoader.LoadLevel("Pantalla_Inicio", "MENU PRINCIPAL", "Regresando al inicio...");
+
     }
 
     // -------------------------------------------------------------
@@ -492,8 +523,8 @@ public class CreditsAndEndingManager : MonoBehaviour
         GameObject busObj = new GameObject("BusVisual", typeof(RectTransform), typeof(Image));
         busObj.transform.SetParent(creditsRoot.transform, false);
         busTransform = busObj.GetComponent<RectTransform>();
-        busTransform.anchoredPosition = new Vector2(0f, -260f);
-        busTransform.sizeDelta = new Vector2(280f, 140f);
+        busTransform.anchoredPosition = new Vector2(-600f, -260f);
+        busTransform.sizeDelta = new Vector2(300f, 150f);
         Image busImg = busObj.GetComponent<Image>();
 
         if (busSprite == null)
@@ -507,8 +538,8 @@ public class CreditsAndEndingManager : MonoBehaviour
         }
         else
         {
-            busImg.sprite = white;
-            busImg.color = new Color(0.2f, 0.8f, 0.4f, 1f); // Verde camion
+            busObj.SetActive(false); // Ocultar si falta el sprite
+
         }
 
         // Contenedor de texto rodante
@@ -517,8 +548,8 @@ public class CreditsAndEndingManager : MonoBehaviour
         creditsTextContainer = textCont.GetComponent<RectTransform>();
         creditsTextContainer.anchorMin = new Vector2(0.5f, 0f);
         creditsTextContainer.anchorMax = new Vector2(0.5f, 0f);
-        creditsTextContainer.anchoredPosition = new Vector2(0f, -600f); // Inicia debajo de la pantalla
-        creditsTextContainer.sizeDelta = new Vector2(1100f, 2200f);
+        creditsTextContainer.anchoredPosition = new Vector2(120f, -600f); // Desplazado a la derecha para no tapar el autobus
+        creditsTextContainer.sizeDelta = new Vector2(960f, 2200f);
 
         GameObject creditsTextObj = new GameObject("CreditsText", typeof(RectTransform), typeof(Text));
         creditsTextObj.transform.SetParent(textCont.transform, false);
