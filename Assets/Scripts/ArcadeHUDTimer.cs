@@ -179,3 +179,4 @@ public class ArcadeHUDTimer : MonoBehaviour
         valueText.text = currentTime.ToString("D2");
     }
 }
+

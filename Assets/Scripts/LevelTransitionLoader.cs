@@ -239,3 +239,4 @@ public class LevelTransitionLoader : MonoBehaviour
         isTransitioning = false;
     }
 }
+

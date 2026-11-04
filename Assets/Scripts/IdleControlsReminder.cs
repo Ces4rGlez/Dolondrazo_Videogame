@@ -183,3 +183,4 @@ public class IdleControlsReminder : MonoBehaviour
         b.text = "[WASD / Flechas] Moverse   |   [J / Z] Golpear   |   [K / X] Patada   |   [E] Subir al Autobus / Interactuar";
     }
 }
+
