@@ -76,6 +76,7 @@ public class DirectorMondragonAI : MonoBehaviour
     private bool hasTriggeredClone = false;
     private bool hasTriggeredMinions = false;
     private bool hasRestoredLife = false;
+    private bool cloneSpawned = false;
 
     // Control de entidades invocadas
     private GameObject activeClone = null;
@@ -148,26 +149,46 @@ public class DirectorMondragonAI : MonoBehaviour
     private void Update()
     {
         // El original permanece inmóvil mientras el clon está activo
+                // El original permanece inmovil mientras el clon esta activo
         if (currentState == DirectorState.WaitingForClone)
         {
-            if (rb != null) rb.linearVelocity = Vector2.zero;
-            bool cloneDead = (activeClone == null || !activeClone.activeInHierarchy);
-            if (!cloneDead && activeClone.TryGetComponent<Health>(out var cloneH))
+            if (rb != null)
             {
-                if (cloneH.IsDead) cloneDead = true;
+                rb.linearVelocity = Vector2.zero;
+                rb.constraints = RigidbodyConstraints2D.FreezePosition | RigidbodyConstraints2D.FreezeRotation;
             }
-            if (cloneDead)
+
+            if (animator != null)
             {
-                Debug.Log("[DirectorMondragonAI] El clon ha sido destruido. El Director retoma el combate.");
-                if (animator != null) animator.SetBool("IsDefending", false);
-                // Descongelar posicion para que el Director pueda moverse de nuevo
-                if (rb != null) rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-                currentState = DirectorState.Chasing;
+                animator.SetBool("IsWalking", false);
+                animator.SetBool("IsDefending", true);
+            }
+
+            FacePlayer();
+
+            // Solo evaluar si el clon murio una vez que realmente haya sido instanciado
+            if (cloneSpawned)
+            {
+                bool cloneDead = (activeClone == null || !activeClone.activeInHierarchy);
+                if (!cloneDead && activeClone.TryGetComponent<Health>(out var cloneH))
+                {
+                    if (cloneH.IsDead) cloneDead = true;
+                }
+
+                if (cloneDead)
+                {
+                    Debug.Log("[DirectorMondragonAI] El clon ha sido destruido. El Director retoma el combate.");
+                    cloneSpawned = false;
+                    activeClone = null;
+                    if (animator != null) animator.SetBool("IsDefending", false);
+                    if (rb != null) rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+                    currentState = DirectorState.Chasing;
+                }
             }
             return;
         }
 
-        if (currentState == DirectorState.Dead || currentState == DirectorState.Restoring || playerTransform == null)
+if (currentState == DirectorState.Dead || currentState == DirectorState.Restoring || playerTransform == null)
             return;
 
         float dist = Vector2.Distance(transform.position, playerTransform.position);
@@ -221,6 +242,17 @@ public class DirectorMondragonAI : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (currentState == DirectorState.WaitingForClone || currentState == DirectorState.WaitingForMinions)
+        {
+            if (rb != null) rb.linearVelocity = Vector2.zero;
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", false);
+                animator.SetBool("IsDefending", true);
+            }
+            return;
+        }
+
         if (currentState == DirectorState.Chasing && playerTransform != null)
         {
             float dx = playerTransform.position.x - transform.position.x;
@@ -405,10 +437,10 @@ public class DirectorMondragonAI : MonoBehaviour
     private IEnumerator SpawnClonePhaseRoutine()
     {
         currentState = DirectorState.WaitingForClone;
+        cloneSpawned = false;
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            // Congelar posicion completamente: el original no puede moverse mientras el clon pelea
             rb.constraints = RigidbodyConstraints2D.FreezePosition | RigidbodyConstraints2D.FreezeRotation;
         }
 
@@ -418,7 +450,7 @@ public class DirectorMondragonAI : MonoBehaviour
             animator.SetBool("IsDefending", true);
         }
 
-        Debug.Log("[DirectorMondragonAI] ¡FASE CLON! El Director se duplica a sí mismo.");
+        Debug.Log("[DirectorMondragonAI] FASE CLON! El Director se duplica a si mismo.");
 
         yield return new WaitForSeconds(0.4f);
 
@@ -438,6 +470,7 @@ public class DirectorMondragonAI : MonoBehaviour
             cloneHealth.Heal(80);
         }
 
+        cloneSpawned = true;
         Debug.Log("[DirectorMondragonAI] Clon listo en combate. El Director original permanece en defensa.");
     }
 
