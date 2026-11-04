@@ -42,6 +42,8 @@ public class CreditsAndEndingManager : MonoBehaviour
     private Text epSubText;
     private Text epBodyText;
     private Text epPageIndicator;
+    private Image epIllustrationImage;
+    private Text epPlaceholderText;
     private Button btnNextEp;
     private Button btnPrevEp;
     private Button btnSkipEp;
@@ -173,6 +175,26 @@ public class CreditsAndEndingManager : MonoBehaviour
         if (epBodyText != null) epBodyText.text = panel.narrative;
         if (epPageIndicator != null) epPageIndicator.text = $"{index + 1} / {epiloguePanels.Count}";
 
+        // Cargar imagen de la vineta si existe en Resources/Sprites/Comic/
+        Sprite epSprite = Resources.Load<Sprite>($"Sprites/Comic/Epilogo_{index + 1}");
+        if (epSprite == null) epSprite = Resources.Load<Sprite>($"Sprites/Comic/Vineta_Final_{index + 1}");
+
+        if (epIllustrationImage != null)
+        {
+            if (epSprite != null)
+            {
+                epIllustrationImage.sprite = epSprite;
+                epIllustrationImage.color = Color.white;
+                if (epPlaceholderText != null) epPlaceholderText.gameObject.SetActive(false);
+            }
+            else
+            {
+                epIllustrationImage.sprite = null;
+                epIllustrationImage.color = new Color(0.06f, 0.08f, 0.14f, 1f);
+                if (epPlaceholderText != null) epPlaceholderText.gameObject.SetActive(true);
+            }
+        }
+
         if (btnPrevEp != null) btnPrevEp.gameObject.SetActive(index > 0);
 
         if (btnNextEp != null)
@@ -275,7 +297,7 @@ public class CreditsAndEndingManager : MonoBehaviour
         GameObject card = new GameObject("Card", typeof(RectTransform), typeof(Image));
         card.transform.SetParent(epilogueRoot.transform, false);
         RectTransform rtCard = card.GetComponent<RectTransform>();
-        rtCard.sizeDelta = new Vector2(1050f, 620f);
+        rtCard.sizeDelta = new Vector2(1240f, 650f);
         Image cardImg = card.GetComponent<Image>();
         cardImg.sprite = white;
         cardImg.color = new Color(0.08f, 0.11f, 0.18f, 0.96f);
@@ -295,7 +317,7 @@ public class CreditsAndEndingManager : MonoBehaviour
         tagObj.transform.SetParent(card.transform, false);
         RectTransform rtTag = tagObj.GetComponent<RectTransform>();
         rtTag.anchoredPosition = new Vector2(0f, 255f);
-        rtTag.sizeDelta = new Vector2(950f, 32f);
+        rtTag.sizeDelta = new Vector2(1180f, 32f);
         epTagText = tagObj.GetComponent<Text>();
         epTagText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         epTagText.fontSize = 20;
@@ -307,7 +329,7 @@ public class CreditsAndEndingManager : MonoBehaviour
         titleObj.transform.SetParent(card.transform, false);
         RectTransform rtTitle = titleObj.GetComponent<RectTransform>();
         rtTitle.anchoredPosition = new Vector2(0f, 205f);
-        rtTitle.sizeDelta = new Vector2(950f, 50f);
+        rtTitle.sizeDelta = new Vector2(1180f, 50f);
         epTitleText = titleObj.GetComponent<Text>();
         epTitleText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         epTitleText.fontSize = 36;
@@ -320,7 +342,7 @@ public class CreditsAndEndingManager : MonoBehaviour
         subObj.transform.SetParent(card.transform, false);
         RectTransform rtSub = subObj.GetComponent<RectTransform>();
         rtSub.anchoredPosition = new Vector2(0f, 155f);
-        rtSub.sizeDelta = new Vector2(950f, 32f);
+        rtSub.sizeDelta = new Vector2(1180f, 32f);
         epSubText = subObj.GetComponent<Text>();
         epSubText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         epSubText.fontSize = 21;
@@ -328,12 +350,43 @@ public class CreditsAndEndingManager : MonoBehaviour
         epSubText.fontStyle = FontStyle.Italic;
         epSubText.color = new Color(0.7f, 0.85f, 1f, 0.85f);
 
-        // Cuadro de Narrativa / Dialogo
+        // Marco de Ilustracion de la Vineta (Lado Izquierdo)
+        GameObject frameObj = new GameObject("IllustrationFrame", typeof(RectTransform), typeof(Image));
+        frameObj.transform.SetParent(card.transform, false);
+        RectTransform rtFr = frameObj.GetComponent<RectTransform>();
+        rtFr.anchoredPosition = new Vector2(-280f, -20f);
+        rtFr.sizeDelta = new Vector2(540f, 310f);
+        Image frImg = frameObj.GetComponent<Image>();
+        frImg.sprite = white;
+        frImg.color = new Color(0.15f, 0.22f, 0.35f, 1f);
+
+        GameObject imgObj = new GameObject("IllustrationImage", typeof(RectTransform), typeof(Image));
+        imgObj.transform.SetParent(frameObj.transform, false);
+        RectTransform rtIm = imgObj.GetComponent<RectTransform>();
+        rtIm.anchorMin = Vector2.zero; rtIm.anchorMax = Vector2.one;
+        rtIm.offsetMin = new Vector2(4f, 4f); rtIm.offsetMax = new Vector2(-4f, -4f);
+        epIllustrationImage = imgObj.GetComponent<Image>();
+        epIllustrationImage.preserveAspect = true;
+
+        GameObject phObj = new GameObject("PlaceholderText", typeof(RectTransform), typeof(Text));
+        phObj.transform.SetParent(frameObj.transform, false);
+        RectTransform rtPh = phObj.GetComponent<RectTransform>();
+        rtPh.anchorMin = Vector2.zero; rtPh.anchorMax = Vector2.one;
+        rtPh.offsetMin = Vector2.zero; rtPh.offsetMax = Vector2.zero;
+        epPlaceholderText = phObj.GetComponent<Text>();
+        epPlaceholderText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        epPlaceholderText.fontSize = 20;
+        epPlaceholderText.fontStyle = FontStyle.Bold;
+        epPlaceholderText.alignment = TextAnchor.MiddleCenter;
+        epPlaceholderText.color = new Color(0.4f, 0.65f, 0.85f, 0.8f);
+        epPlaceholderText.text = "[ ILUSTRACION EN PROCESO ]\n\nGuarda la imagen en:\nAssets/Resources/Sprites/Comic/\ncon nombre Epilogo_1, Epilogo_2, etc.";
+
+        // Cuadro de Narrativa / Dialogo (Lado Derecho)
         GameObject bodyBox = new GameObject("BodyBox", typeof(RectTransform), typeof(Image));
         bodyBox.transform.SetParent(card.transform, false);
         RectTransform rtBox = bodyBox.GetComponent<RectTransform>();
-        rtBox.anchoredPosition = new Vector2(0f, -20f);
-        rtBox.sizeDelta = new Vector2(950f, 250f);
+        rtBox.anchoredPosition = new Vector2(300f, -20f);
+        rtBox.sizeDelta = new Vector2(580f, 310f);
         Image boxImg = bodyBox.GetComponent<Image>();
         boxImg.sprite = white;
         boxImg.color = new Color(0.04f, 0.06f, 0.11f, 0.9f);
@@ -539,3 +592,4 @@ public class CreditsAndEndingManager : MonoBehaviour
         return btn;
     }
 }
+
