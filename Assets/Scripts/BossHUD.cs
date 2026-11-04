@@ -445,47 +445,57 @@ public class BossHUD : MonoBehaviour
         nextLevelStatusText.alignment = TextAnchor.MiddleCenter;
         nextLevelStatusText.color = new Color(0.4f, 1f, 0.4f, 1f);
 
+                // Guardar progreso del nivel superado
+        if (isLevel3Scene)
+        {
+            GameSaveManager.UnlockLevel(3);
+        }
+        else if (isLevel2Scene)
+        {
+            GameSaveManager.UnlockLevel(3);
+        }
+        else
+        {
+            GameSaveManager.UnlockLevel(2);
+        }
+
         // --- BOTONES INTERACTIVOS ---
-        // 1. Continuar al Siguiente Nivel
-        string nextBtnLabel = isLevel3Scene ? ">> MENU" : (isLevel2Scene ? ">> NIVEL 3" : ">> NIVEL 2");
+        // 1. Continuar al Siguiente Nivel / Creditos Finales
+        string nextBtnLabel = isLevel3Scene ? ">> CREDITOS" : (isLevel2Scene ? ">> NIVEL 3" : ">> NIVEL 2");
         MakeButton(cardObj.transform, white, new Vector2(-260f, -220f), new Vector2(230f, 65f),
                    nextBtnLabel, new Color(0.15f, 0.65f, 0.35f, 1f), new Color(0.25f, 0.85f, 0.45f, 1f),
                    "Btn_NextLevel", () =>
                    {
-                       int nextIdx = SceneManager.GetActiveScene().buildIndex + 1;
-                       if (nextIdx < SceneManager.sceneCountInBuildSettings)
+                       Time.timeScale = 1f;
+                       if (isLevel3Scene)
                        {
-                           Time.timeScale = 1f;
-                           SceneManager.LoadScene(nextIdx);
+                           if (resultsScreenObj != null) Destroy(resultsScreenObj);
+                           GameObject endingObj = new GameObject("EndingManager");
+                           endingObj.AddComponent<CreditsAndEndingManager>();
                        }
                        else
                        {
-                           if (nextLevelStatusText != null)
-                           {
-                               nextLevelStatusText.text = isLevel2Scene
-                                   ? "¡NIVEL 3 EN DESARROLLO! ¡Has completado con éxito el Acto II!"
-                                   : "!NIVEL 2 (EL CENTRO) EN DESARROLLO! !Has completado con exito el Acto 1!";
-                               nextLevelStatusText.color = new Color(1f, 0.85f, 0.2f, 1f);
-                           }
+                           int nextLevelNum = isLevel2Scene ? 3 : 2;
+                           LevelTransitionLoader.LoadLevel(GameSaveManager.GetLevelSceneName(nextLevelNum), GameSaveManager.GetLevelDisplayName(nextLevelNum));
                        }
                    });
 
-        // 2. Reiniciar Nivel
+        // 2. Reiniciar Nivel con Pantalla de Carga
         MakeButton(cardObj.transform, white, new Vector2(0f, -220f), new Vector2(230f, 65f),
-                   "|| REINICIAR", new Color(0.2f, 0.45f, 0.8f, 1f), new Color(0.3f, 0.6f, 0.95f, 1f),
+                   "REINICIAR", new Color(0.2f, 0.45f, 0.8f, 1f), new Color(0.3f, 0.6f, 0.95f, 1f),
                    "Btn_Restart", () =>
                    {
                        Time.timeScale = 1f;
-                       SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                       LevelTransitionLoader.LoadLevel(SceneManager.GetActiveScene().name);
                    });
 
-        // 3. Menu Principal
+        // 3. Menu Principal con Pantalla de Carga
         MakeButton(cardObj.transform, white, new Vector2(260f, -220f), new Vector2(230f, 65f),
                    "<< MENU", new Color(0.25f, 0.2f, 0.35f, 1f), new Color(0.4f, 0.3f, 0.55f, 1f),
                    "Btn_Menu", () =>
                    {
                        Time.timeScale = 1f;
-                       SceneManager.LoadScene(0);
+                       LevelTransitionLoader.LoadLevel("Pantalla_Inicio", "MENU PRINCIPAL");
                    });
     }
 

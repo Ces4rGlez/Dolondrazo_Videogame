@@ -22,6 +22,7 @@ public class MainMenuManager : MonoBehaviour
 
     private GameObject optionsModal;
     private GameObject storyModal;
+    private GameObject levelSelectModal;
 
     private Text masterValueText;
     private Text musicValueText;
@@ -128,6 +129,13 @@ public class MainMenuManager : MonoBehaviour
         PlayClick();
         Time.timeScale = 1f;
 
+        // Si el jugador ya ha desbloqueado niveles posteriores, abrir selector de nivel para continuar
+        if (GameSaveManager.GetMaxUnlockedLevel() > 1)
+        {
+            OpenLevelSelectModal();
+            return;
+        }
+
         // Si existe el ComicPrologueManager, mostrar la historieta narrativa antes de entrar a la accion
         if (ComicPrologueManager.Instance != null)
         {
@@ -135,22 +143,25 @@ public class MainMenuManager : MonoBehaviour
             return;
         }
 
-        // Cargar Nivel 1 (Calzada de los Heroes)
-        if (Application.CanStreamedLevelBeLoaded("Nivel_1_Calzada"))
+        // Cargar Nivel 1 con pantalla de carga fluida
+        LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "¡Llega al CBTis 75 a tiempo!");
+    }
+
+    public void OpenLevelSelectModal()
+    {
+        PlayClick();
+        if (levelSelectModal != null)
         {
-            SceneManager.LoadScene("Nivel_1_Calzada");
+            levelSelectModal.SetActive(true);
         }
-        else if (Application.CanStreamedLevelBeLoaded("MainMenu"))
+    }
+
+    public void OnCloseLevelSelectClicked()
+    {
+        PlayClick();
+        if (levelSelectModal != null)
         {
-            SceneManager.LoadScene("MainMenu");
-        }
-        else if (SceneManager.sceneCountInBuildSettings > 1)
-        {
-            SceneManager.LoadScene(1);
-        }
-        else
-        {
-            SceneManager.LoadScene("SampleScene");
+            levelSelectModal.SetActive(false);
         }
     }
 
@@ -510,6 +521,7 @@ public class MainMenuManager : MonoBehaviour
         // === 6. MODALES REDISENADOS ===
         BuildOptionsModal(canvas.transform, white);
         BuildStoryModal(canvas.transform, white);
+        BuildLevelSelectModal(canvas.transform, white);
     }
 
     private void MakeStyledMenuButton(Transform parent, Sprite white, Vector2 aPos, Vector2 size,
@@ -924,4 +936,116 @@ public class MenuButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExit
     {
         if (rt != null) rt.localScale = originalScale;
     }
+
+    private void BuildLevelSelectModal(Transform parent, Sprite white)
+    {
+        levelSelectModal = new GameObject("Modal_LevelSelect", typeof(RectTransform), typeof(Image));
+        levelSelectModal.transform.SetParent(parent, false);
+        RectTransform rt = levelSelectModal.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(850f, 580f);
+
+        Image bg = levelSelectModal.GetComponent<Image>();
+        bg.sprite = white; bg.color = new Color(0.04f, 0.05f, 0.12f, 0.98f);
+
+        MakeBar(levelSelectModal.transform, white, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 6f),
+                new Color(1f, 0.85f, 0.2f, 1f), "ModalTopGold");
+
+        MakeText(levelSelectModal.transform, "S E L E C C I O N A R   N I V E L",
+                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+                 new Vector2(0f, -32f), new Vector2(0f, 40f),
+                 26, FontStyle.Bold, TextAnchor.MiddleCenter,
+                 new Color(1f, 0.88f, 0.2f, 1f), "Modal_Level_Title");
+
+        int maxUnlocked = GameSaveManager.GetMaxUnlockedLevel();
+        float startY = -120f;
+        float gapY = 100f;
+
+        // Nivel 1
+        MakeLevelCard(levelSelectModal.transform, white, 1, "NIVEL 1: CALZADA DE LOS HEROES",
+                      "Camino a Dolores Hidalgo • Desafia a los estudiantes del CECyTE",
+                      startY, true, () => {
+                          Time.timeScale = 1f;
+                          LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "¡Llega al CBTis 75 a tiempo!");
+                      });
+
+        // Nivel 2
+        MakeLevelCard(levelSelectModal.transform, white, 2, "NIVEL 2: EL CENTRO Y CINEPOLIS",
+                      "Zona Centro • Enfrenta a las alumnas del Rebsamen y la Directora",
+                      startY - gapY, maxUnlocked >= 2, () => {
+                          Time.timeScale = 1f;
+                          LevelTransitionLoader.LoadLevel("Nivel_2_Cinepolis", "NIVEL 2: EL CENTRO Y CINEPOLIS", "¡Cuidado con los mochilazos!");
+                      });
+
+        // Nivel 3
+        MakeLevelCard(levelSelectModal.transform, white, 3, "NIVEL 3: CBTIS 75 (BATALLA FINAL)",
+                      "Avenida CBTis 75 • Vence al Prefecto del SABES y al Lic. Mondragon",
+                      startY - gapY * 2, maxUnlocked >= 3, () => {
+                          Time.timeScale = 1f;
+                          LevelTransitionLoader.LoadLevel("Nivel_3_CBTIS75", "NIVEL 3: CBTIS 75", "¡Derrota al Director antes de que pase el camion!");
+                      });
+
+        // Boton Cerrar
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(0f, -500f), new Vector2(260f, 54f),
+                               "<< REGRESAR",
+                               new Color(0.25f, 0.28f, 0.38f, 1f),
+                               new Color(0.4f, 0.45f, 0.6f, 1f),
+                               "Btn_CloseLevelSelect", OnCloseLevelSelectClicked);
+
+        levelSelectModal.SetActive(false);
+    }
+
+    private void MakeLevelCard(Transform parent, Sprite white, int levelNum, string title, string desc, float yPos, bool isUnlocked, UnityEngine.Events.UnityAction onPlay)
+    {
+        GameObject row = new GameObject($"LevelRow_{levelNum}", typeof(RectTransform), typeof(Image));
+        row.transform.SetParent(parent, false);
+        RectTransform rt = row.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f); rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, yPos);
+        rt.sizeDelta = new Vector2(740f, 82f);
+
+        Image img = row.GetComponent<Image>();
+        img.sprite = white;
+        img.color = isUnlocked ? new Color(0.08f, 0.12f, 0.22f, 0.95f) : new Color(0.05f, 0.06f, 0.09f, 0.7f);
+
+        // Barra lateral
+        MakeBar(row.transform, white, new Vector2(0f, 0f), new Vector2(0f, 1f),
+                new Vector2(0f, 0.5f), Vector2.zero, new Vector2(5f, 0f),
+                isUnlocked ? new Color(0.2f, 0.85f, 1f, 1f) : new Color(0.4f, 0.4f, 0.4f, 0.5f), "RowBar");
+
+        // Titulo
+        MakeText(row.transform, isUnlocked ? title : $"[ BLOQUEADO ]  {title}",
+                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f),
+                 new Vector2(24f, -10f), new Vector2(-220f, 32f),
+                 19, FontStyle.Bold, TextAnchor.MiddleLeft,
+                 isUnlocked ? new Color(1f, 0.9f, 0.2f, 1f) : new Color(0.6f, 0.6f, 0.6f, 0.8f), "TitleText");
+
+        // Descripcion
+        MakeText(row.transform, desc,
+                 new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f),
+                 new Vector2(24f, -16f), new Vector2(-220f, -32f),
+                 14, FontStyle.Italic, TextAnchor.MiddleLeft,
+                 isUnlocked ? new Color(0.7f, 0.85f, 1f, 0.85f) : new Color(0.5f, 0.5f, 0.5f, 0.6f), "DescText");
+
+        if (isUnlocked)
+        {
+            MakeArcadeSimpleButton(row.transform, white, new Vector2(270f, -41f), new Vector2(160f, 48f),
+                                   "JUGAR >>",
+                                   new Color(0.15f, 0.65f, 0.35f, 1f),
+                                   new Color(0.25f, 0.85f, 0.45f, 1f),
+                                   $"Btn_Play_{levelNum}", onPlay);
+        }
+        else
+        {
+            MakeText(row.transform, "BLOQUEADO",
+                     new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                     new Vector2(-30f, 0f), new Vector2(140f, 36f),
+                     15, FontStyle.Bold, TextAnchor.MiddleCenter,
+                     new Color(0.6f, 0.3f, 0.3f, 0.9f), "LockedText");
+        }
+    }
+
 }

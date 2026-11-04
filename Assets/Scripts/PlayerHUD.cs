@@ -42,6 +42,16 @@ public class PlayerHUD : MonoBehaviour
 
         BuildBigBatteryHUD();
 
+        // Inicializar automaticamente el reloj arcade y la guia de controles de inactividad
+        if (FindFirstObjectByType<ArcadeHUDTimer>() == null)
+        {
+            gameObject.AddComponent<ArcadeHUDTimer>();
+        }
+        if (FindFirstObjectByType<IdleControlsReminder>() == null)
+        {
+            gameObject.AddComponent<IdleControlsReminder>();
+        }
+
         if (playerHealth != null)
         {
             playerHealth.OnHealthChanged += HandleHealthChanged;
