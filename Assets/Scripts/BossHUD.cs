@@ -325,6 +325,7 @@ public class BossHUD : MonoBehaviour
         if (canvas == null) return;
 
         if (resultsScreenObj != null) Destroy(resultsScreenObj);
+                            if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
 
         Texture2D tex = new Texture2D(4, 4);
         Color[] px = new Color[16];
@@ -470,6 +471,7 @@ public class BossHUD : MonoBehaviour
                        if (isLevel3Scene)
                        {
                            if (resultsScreenObj != null) Destroy(resultsScreenObj);
+                            if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
                            GameObject endingObj = new GameObject("EndingManager");
                            endingObj.AddComponent<CreditsAndEndingManager>();
                        }

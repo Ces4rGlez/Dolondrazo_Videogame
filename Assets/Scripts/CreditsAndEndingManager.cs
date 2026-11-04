@@ -248,6 +248,7 @@ public class CreditsAndEndingManager : MonoBehaviour
     
     private void PlayEndingMusic()
     {
+        if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
         if (creditsMusic == null) return;
 
         if (AudioManager.Instance != null)
