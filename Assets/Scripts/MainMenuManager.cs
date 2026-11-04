@@ -522,7 +522,7 @@ public class MainMenuManager : MonoBehaviour
         RectTransform rtMc = missionCard.GetComponent<RectTransform>();
         rtMc.anchorMin = new Vector2(0f, 1f); rtMc.anchorMax = new Vector2(0f, 1f);
         rtMc.pivot = new Vector2(0f, 1f);
-        rtMc.anchoredPosition = new Vector2(colX, startY - spacingY * 4 - 8f);
+        rtMc.anchoredPosition = new Vector2(colX, startY - spacingY * btnIndex - 14f);
         rtMc.sizeDelta = new Vector2(btnWidth + 40f, 145f);
         Image mcBg = missionCard.GetComponent<Image>();
         mcBg.sprite = white;
@@ -1096,5 +1096,6 @@ public class MenuButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExit
         if (rt != null) rt.localScale = originalScale;
     }
 }
+
 
 
