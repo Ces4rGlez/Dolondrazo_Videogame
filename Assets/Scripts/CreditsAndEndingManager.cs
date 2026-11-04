@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -73,6 +73,7 @@ public class CreditsAndEndingManager : MonoBehaviour
             audioSource.loop = true;
         }
 
+        StopAllLevelAudio();
         InitEpilogueData();
     }
 
@@ -246,9 +247,37 @@ public class CreditsAndEndingManager : MonoBehaviour
 
 
     
+    private void StopAllLevelAudio()
+    {
+        GameObject bgmObj = GameObject.Find("Musica_Nivel");
+        if (bgmObj != null)
+        {
+            AudioSource src = bgmObj.GetComponent<AudioSource>();
+            if (src != null)
+            {
+                src.Stop();
+                src.clip = null;
+            }
+            bgmObj.SetActive(false);
+        }
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopBGM();
+        }
+
+        AudioSource[] allSources = FindObjectsByType<AudioSource>(FindObjectsSortMode.None);
+        foreach (var s in allSources)
+        {
+            if (s != null && s != audioSource && (AudioManager.Instance == null || s != AudioManager.Instance.GetComponent<AudioSource>()))
+            {
+                s.Stop();
+            }
+        }
+    }
     private void PlayEndingMusic()
     {
-        if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
+        StopAllLevelAudio();
         if (creditsMusic == null) return;
 
         if (AudioManager.Instance != null)
@@ -271,7 +300,7 @@ public class CreditsAndEndingManager : MonoBehaviour
     public void ReturnToMenu()
     {
         Time.timeScale = 1f;
-        if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
+        StopAllLevelAudio();
         if (audioSource != null) audioSource.Stop();
         if (canvas != null) Destroy(canvas.gameObject);
         Destroy(gameObject);

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -145,6 +145,7 @@ public class BossHUD : MonoBehaviour
                 yield return StartCoroutine(PlayOutroDialogueRoutine());
 
                 // 3. Cambiar musica a tema de victoria
+                if (bgmSource == null) { GameObject bgmObj = GameObject.Find("Musica_Nivel"); if (bgmObj != null) bgmSource = bgmObj.GetComponent<AudioSource>(); }
                 if (bgmSource != null && victoryClip != null)
                 {
                     bgmSource.Stop();
@@ -325,6 +326,7 @@ public class BossHUD : MonoBehaviour
         if (canvas == null) return;
 
         if (resultsScreenObj != null) Destroy(resultsScreenObj);
+                            GameObject bgmObjL3 = GameObject.Find("Musica_Nivel"); if (bgmObjL3 != null) { AudioSource src = bgmObjL3.GetComponent<AudioSource>(); if (src != null) src.Stop(); bgmObjL3.SetActive(false); }
                             if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
 
         Texture2D tex = new Texture2D(4, 4);
@@ -471,6 +473,7 @@ public class BossHUD : MonoBehaviour
                        if (isLevel3Scene)
                        {
                            if (resultsScreenObj != null) Destroy(resultsScreenObj);
+                            GameObject bgmObjL3 = GameObject.Find("Musica_Nivel"); if (bgmObjL3 != null) { AudioSource src = bgmObjL3.GetComponent<AudioSource>(); if (src != null) src.Stop(); bgmObjL3.SetActive(false); }
                             if (AudioManager.Instance != null) AudioManager.Instance.StopBGM();
                            GameObject endingObj = new GameObject("EndingManager");
                            endingObj.AddComponent<CreditsAndEndingManager>();
