@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -127,29 +127,37 @@ public class PlayerHUD : MonoBehaviour
         }
     }
 
+        public static Canvas GetOrCreateHUDCanvas()
+    {
+        Canvas[] all = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        foreach (var c in all)
+        {
+            if (c.gameObject.activeInHierarchy && !c.name.Contains("Loading") && !c.name.Contains("Ending") && !c.name.Contains("Menu"))
+            {
+                return c;
+            }
+        }
+
+        GameObject canvasObj = new GameObject("HUD_Canvas");
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 100;
+
+        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920, 1080);
+        scaler.matchWidthOrHeight = 0.5f;
+        scaler.dynamicPixelsPerUnit = 2.5f;
+
+        canvasObj.AddComponent<GraphicRaycaster>();
+        return canvas;
+    }
+
     private void BuildBigBatteryHUD()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
-        if (canvas == null)
-        {
-            GameObject canvasObj = new GameObject("HUD_Canvas");
-            canvas = canvasObj.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 100;
-
-            CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
-            scaler.matchWidthOrHeight = 0.5f;
-            scaler.dynamicPixelsPerUnit = 2.5f; // Maxima nitidez en fuentes
-
-            canvasObj.AddComponent<GraphicRaycaster>();
-        }
-        else
-        {
-            CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
-            if (scaler != null) scaler.dynamicPixelsPerUnit = 2.5f;
-        }
+        Canvas canvas = GetOrCreateHUDCanvas();
+        CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+        if (scaler != null) scaler.dynamicPixelsPerUnit = 2.5f;
 
         Texture2D tex = new Texture2D(4, 4);
         Color[] px = new Color[16];
@@ -267,3 +275,4 @@ public class PlayerHUD : MonoBehaviour
         }
     }
 }
+

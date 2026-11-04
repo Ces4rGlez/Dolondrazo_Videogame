@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -215,7 +215,7 @@ public class BossHUD : MonoBehaviour
                     speakerName = "Fercho",
                     portrait    = ferChoPortrait,
                     nameColor   = ferChoColor,
-                    text        = "¡Al fin llegó el Zafiro! Entre los del SABES esquivando todo y la regla T rota, pensé que no la contaba.",
+                    text        = "Â¡Al fin llegÃ³ el Zafiro! Entre los del SABES esquivando todo y la regla T rota, pensÃ© que no la contaba.",
                     typeSpeed   = 0.04f
                 },
                 new DialogueSystem.DialogueLine
@@ -223,7 +223,7 @@ public class BossHUD : MonoBehaviour
                     speakerName = "Fercho",
                     portrait    = ferChoPortrait,
                     nameColor   = ferChoColor,
-                    text        = "¡El CBTis 75 quedó atrás! Próxima parada: Centro de Dolores... ¡Esa maqueta se entrega hoy sí o sí!",
+                    text        = "Â¡El CBTis 75 quedÃ³ atrÃ¡s! PrÃ³xima parada: Centro de Dolores... Â¡Esa maqueta se entrega hoy sÃ­ o sÃ­!",
                     typeSpeed   = 0.04f
                 },
                 new DialogueSystem.DialogueLine
@@ -231,7 +231,7 @@ public class BossHUD : MonoBehaviour
                     speakerName = "Narrador",
                     portrait    = null,
                     nameColor   = narratorColor,
-                    text        = "¡ACTO III COMPLETADO! Fercho aborda el autobús en las puertas del CBTis 75 rumbo al Centro Histórico...",
+                    text        = "Â¡ACTO III COMPLETADO! Fercho aborda el autobÃºs en las puertas del CBTis 75 rumbo al Centro HistÃ³rico...",
                     typeSpeed   = 0.038f
                 }
             };
@@ -245,7 +245,7 @@ public class BossHUD : MonoBehaviour
                     speakerName = "Fercho",
                     portrait    = ferChoPortrait,
                     nameColor   = ferChoColor,
-                    text        = "¡Uff! Por poco me hace trizas la maqueta con esa patada. El Cinépolis ya quedó atrás... ¡Ahora directo al Centro de Dolores!",
+                    text        = "Â¡Uff! Por poco me hace trizas la maqueta con esa patada. El CinÃ©polis ya quedÃ³ atrÃ¡s... Â¡Ahora directo al Centro de Dolores!",
                     typeSpeed   = 0.04f
                 },
                 new DialogueSystem.DialogueLine
@@ -253,7 +253,7 @@ public class BossHUD : MonoBehaviour
                     speakerName = "Fercho",
                     portrait    = ferChoPortrait,
                     nameColor   = ferChoColor,
-                    text        = "Valentina y sus amigos del Rébsamen no pudieron detenerme. ¡Pero el tiempo sigue corriendo en mi contra!",
+                    text        = "Valentina y sus amigos del RÃ©bsamen no pudieron detenerme. Â¡Pero el tiempo sigue corriendo en mi contra!",
                     typeSpeed   = 0.04f
                 },
                 new DialogueSystem.DialogueLine
@@ -261,7 +261,7 @@ public class BossHUD : MonoBehaviour
                     speakerName = "Narrador",
                     portrait    = null,
                     nameColor   = narratorColor,
-                    text        = "¡ACTO II COMPLETADO! Fercho cruza Paseo Dolores rumbo al Centro Histórico...",
+                    text        = "Â¡ACTO II COMPLETADO! Fercho cruza Paseo Dolores rumbo al Centro HistÃ³rico...",
                     typeSpeed   = 0.038f
                 }
             };
@@ -321,7 +321,7 @@ public class BossHUD : MonoBehaviour
             GameObject es = new GameObject("EventSystem"); es.AddComponent<UnityEngine.EventSystems.EventSystem>(); es.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
         }
 
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         if (resultsScreenObj != null) Destroy(resultsScreenObj);
@@ -377,7 +377,7 @@ public class BossHUD : MonoBehaviour
         bool isLevel3Scene = SceneManager.GetActiveScene().name.Contains("3") || SceneManager.GetActiveScene().name.Contains("CBTIS");
         bool isLevel2Scene = SceneManager.GetActiveScene().name.Contains("2") || SceneManager.GetActiveScene().name.Contains("Cinepolis");
         string clearTitle = isLevel3Scene ? "*** STAGE 3 CLEAR! ***" : (isLevel2Scene ? "*** STAGE 2 CLEAR! ***" : "*** STAGE 1 CLEAR! ***");
-        string clearSub   = isLevel3Scene ? "CBTIS 75 - ENTRADA DESPEJADA Y ABORDAJE DEL ZAFIRO" : (isLevel2Scene ? "CINÉPOLIS PASEO DOLORES - VALENTINA DERROTADA" : "CALZADA DE LOS HEROES - ALUMNO DE TALLER DERROTADO");
+        string clearSub   = isLevel3Scene ? "CBTIS 75 - ENTRADA DESPEJADA Y ABORDAJE DEL ZAFIRO" : (isLevel2Scene ? "CINÃ‰POLIS PASEO DOLORES - VALENTINA DERROTADA" : "CALZADA DE LOS HEROES - ALUMNO DE TALLER DERROTADO");
 
         // Titulo STAGE CLEAR
         MakeText(cardObj.transform, clearTitle,
@@ -566,7 +566,7 @@ public class BossHUD : MonoBehaviour
     {
         if (bossBarContainer != null) return;
 
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null)
         {
             GameObject canvasObj = new GameObject("HUD_Canvas");
@@ -682,3 +682,4 @@ public class BossHUD : MonoBehaviour
             bossHealth.OnHealthChanged -= HandleBossHealthChanged;
     }
 }
+

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -66,7 +66,7 @@ public class PauseManager : MonoBehaviour
 
     private void BuildPausePanel()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -186,4 +186,5 @@ public class PauseManager : MonoBehaviour
         AddText(btnObj.transform, label, Vector2.zero, size, 21, FontStyle.Bold, Color.white, "Label");
     }
 }
+
 

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -88,7 +88,7 @@ public class HealthPickup : MonoBehaviour
 
     private void ShowFloatingText(string msg, Vector3 worldPos, Color color)
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4,4);
@@ -132,3 +132,4 @@ public class HealthPickup : MonoBehaviour
         Destroy(obj);
     }
 }
+

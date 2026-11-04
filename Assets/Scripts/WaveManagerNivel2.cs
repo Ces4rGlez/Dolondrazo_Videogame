@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -71,7 +71,7 @@ public class WaveManagerNivel2 : MonoBehaviour
 
     private void SetupWaveBannerUI()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -223,7 +223,7 @@ public class WaveManagerNivel2 : MonoBehaviour
             Instantiate(completedWave.rewardPickup, completedWave.rewardSpawnPoint.position, Quaternion.identity);
         }
 
-        yield return StartCoroutine(ShowBannerRoutine("¡ZONA DESPEJADA!", "Sigue avanzando hacia Paseo Dolores", 1.8f));
+        yield return StartCoroutine(ShowBannerRoutine("Â¡ZONA DESPEJADA!", "Sigue avanzando hacia Paseo Dolores", 1.8f));
 
         // Desbloquear camara
         if (cameraFollow != null)
@@ -265,3 +265,4 @@ public class WaveManagerNivel2 : MonoBehaviour
         waveBannerObj.SetActive(false);
     }
 }
+

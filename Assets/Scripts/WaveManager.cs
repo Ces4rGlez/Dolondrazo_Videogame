@@ -1,4 +1,4 @@
-using UnityEngine.UI;
+﻿using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -64,7 +64,7 @@ public class WaveManager : MonoBehaviour
 
     private void SetupWaveAnnouncer()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -280,4 +280,5 @@ public class WaveManager : MonoBehaviour
         StartCoroutine(StartWave(index));
     }
 }
+
 

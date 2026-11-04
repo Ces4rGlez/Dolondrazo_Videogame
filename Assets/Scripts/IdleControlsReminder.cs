@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
@@ -117,7 +117,7 @@ public class IdleControlsReminder : MonoBehaviour
 
     private void EnsureUI()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         if (panelObj != null) return;
@@ -183,4 +183,5 @@ public class IdleControlsReminder : MonoBehaviour
         b.text = "[WASD / Flechas] Moverse   |   [J / Z] Golpear   |   [K / X] Patada   |   [E] Subir al Autobus / Interactuar";
     }
 }
+
 

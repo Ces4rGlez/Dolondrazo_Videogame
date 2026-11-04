@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -88,7 +88,7 @@ public class BusHazard : MonoBehaviour
     {
         if (boardPromptObj != null && warningBannerObj != null) return;
 
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null)
         {
             GameObject canvasObj = new GameObject("HUD_Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -359,3 +359,4 @@ public class BusHazard : MonoBehaviour
         }
     }
 }
+

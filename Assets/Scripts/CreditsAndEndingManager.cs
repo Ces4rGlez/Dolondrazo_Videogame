@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -131,25 +131,25 @@ public class CreditsAndEndingManager : MonoBehaviour
         {
             new EpiloguePanel
             {
-                tag = "EPILOGO • VINETA 1 DE 3",
+                tag = "EPILOGO â€¢ VINETA 1 DE 3",
                 title = "ENTREGA A TIEMPO (1:55 PM)",
-                subtitle = "Aula de Clases — CBTis 75, Dolores Hidalgo",
-                narrative = "¡Por un pelo! Entro corriendo al salon justo cinco minutos antes de que suene la campana. Coloco la maqueta intacta sobre el escritorio del profesor. Me mira con asombro viendo mi ropa llena de polvo por las peleas en la calle... pero la maqueta esta impecable. ¡Calificacion de 10 asegurada!",
+                subtitle = "Aula de Clases â€” CBTis 75, Dolores Hidalgo",
+                narrative = "Â¡Por un pelo! Entro corriendo al salon justo cinco minutos antes de que suene la campana. Coloco la maqueta intacta sobre el escritorio del profesor. Me mira con asombro viendo mi ropa llena de polvo por las peleas en la calle... pero la maqueta esta impecable. Â¡Calificacion de 10 asegurada!",
                 accentColor = new Color(0.25f, 0.85f, 1f, 1f)
             },
             new EpiloguePanel
             {
-                tag = "EPILOGO • VINETA 2 DE 3",
+                tag = "EPILOGO â€¢ VINETA 2 DE 3",
                 title = "EL ZAFIRO DEL TRIUNFO (2:30 PM)",
-                subtitle = "Avenida Principal — Autobus Zafiro DH-0087",
+                subtitle = "Avenida Principal â€” Autobus Zafiro DH-0087",
                 narrative = "Sentado comodamente junto a la ventanilla del autobus, veo pasar la Calzada de los Heroes y el Centro de Dolores Hidalgo. El rugido del motor diesel suena como musica de victoria. Todo el esfuerzo y cada golpe valieron la pena.",
                 accentColor = new Color(1f, 0.85f, 0.2f, 1f)
             },
             new EpiloguePanel
             {
-                tag = "EPILOGO • VINETA 3 DE 3",
+                tag = "EPILOGO â€¢ VINETA 3 DE 3",
                 title = "UNA NIEVE BIEN MERECIDA (3:15 PM)",
-                subtitle = "Jardin Principal — Parroquia de Dolores Hidalgo",
+                subtitle = "Jardin Principal â€” Parroquia de Dolores Hidalgo",
                 narrative = "Termino el dia en una banca del jardin colonial saboreando una nieve tradicional de mantecado con queso. El sol se oculta sobre las torres de la iglesia. Hoy defendi mi proyecto y demostre de que estamos hechos los del CBTis 75.",
                 accentColor = new Color(0.3f, 0.95f, 0.5f, 1f)
             }
@@ -283,7 +283,7 @@ public class CreditsAndEndingManager : MonoBehaviour
         rtRoot.anchorMin = Vector2.zero; rtRoot.anchorMax = Vector2.one;
         rtRoot.offsetMin = Vector2.zero; rtRoot.offsetMax = Vector2.zero;
 
-        // Fondo oscuro con viñeta
+        // Fondo oscuro con viÃ±eta
         GameObject bgObj = new GameObject("Bg", typeof(RectTransform), typeof(Image));
         bgObj.transform.SetParent(epilogueRoot.transform, false);
         RectTransform rtBg = bgObj.GetComponent<RectTransform>();
@@ -293,7 +293,7 @@ public class CreditsAndEndingManager : MonoBehaviour
         bgImg.sprite = white;
         bgImg.color = new Color(0.04f, 0.05f, 0.09f, 0.98f);
 
-        // Tarjeta central de la viñeta
+        // Tarjeta central de la viÃ±eta
         GameObject card = new GameObject("Card", typeof(RectTransform), typeof(Image));
         card.transform.SetParent(epilogueRoot.transform, false);
         RectTransform rtCard = card.GetComponent<RectTransform>();
@@ -443,15 +443,29 @@ public class CreditsAndEndingManager : MonoBehaviour
         rtRoot.anchorMin = Vector2.zero; rtRoot.anchorMax = Vector2.one;
         rtRoot.offsetMin = Vector2.zero; rtRoot.offsetMax = Vector2.zero;
 
-        // Fondo oscuro / carretera
+        // Fondo personalizado si el usuario coloca una imagen en Resources/Sprites/Fondo_Creditos
+        Sprite customBg = Resources.Load<Sprite>("Sprites/Fondo_Creditos");
+        if (customBg == null) customBg = Resources.Load<Sprite>("Sprites/Credits_Background");
+        if (customBg == null) customBg = Resources.Load<Sprite>("Sprites/Fondo_Final");
+
         GameObject bgObj = new GameObject("CreditsBg", typeof(RectTransform), typeof(Image));
         bgObj.transform.SetParent(creditsRoot.transform, false);
         RectTransform rtBg = bgObj.GetComponent<RectTransform>();
         rtBg.anchorMin = Vector2.zero; rtBg.anchorMax = Vector2.one;
         rtBg.offsetMin = Vector2.zero; rtBg.offsetMax = Vector2.zero;
         Image bgImg = bgObj.GetComponent<Image>();
-        bgImg.sprite = white;
-        bgImg.color = new Color(0.02f, 0.03f, 0.07f, 1f);
+
+        if (customBg != null)
+        {
+            bgImg.sprite = customBg;
+            bgImg.color = Color.white;
+            bgImg.preserveAspect = false; // Ajustar a toda la pantalla
+        }
+        else
+        {
+            bgImg.sprite = white;
+            bgImg.color = new Color(0.02f, 0.03f, 0.07f, 1f);
+        }
 
         // Silueta de carretera en la parte inferior
         GameObject road = new GameObject("Road", typeof(RectTransform), typeof(Image));
@@ -544,8 +558,8 @@ public class CreditsAndEndingManager : MonoBehaviour
             "<b><size=28><color=#FFB300>AGRADECIMIENTOS ESPECIALES</color></size></b>\n" +
             "<size=24>Al CBTis 75 de Dolores Hidalgo\nA la Cuna de la Independencia Nacional, Guanajuato\nA los profesores, companeros de clase y amigos\nY a ti por haber jugado esta aventura</size>\n\n\n\n" +
 
-            "<b><size=38><color=#33FF77>¡MISION CUMPLIDA!</color></size></b>\n" +
-            "<b><size=30><color=#FFD700>¡CALIFICACION DE 10 ASEGURADA!</color></size></b>\n\n\n\n" +
+            "<b><size=38><color=#33FF77>Â¡MISION CUMPLIDA!</color></size></b>\n" +
+            "<b><size=30><color=#FFD700>Â¡CALIFICACION DE 10 ASEGURADA!</color></size></b>\n\n\n\n" +
 
             "<i><size=22><color=#AAAAAA>[ Manten pulsado ESPACIO para acelerar | Pulsa ENTER para volver al Menu ]</color></size></i>\n";
 
@@ -592,4 +606,5 @@ public class CreditsAndEndingManager : MonoBehaviour
         return btn;
     }
 }
+
 

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -204,7 +204,7 @@ public class DialogueSystem : MonoBehaviour
 
     private void BuildDialogueUI()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -357,3 +357,4 @@ public class DialogueSystem : MonoBehaviour
         }
     }
 }
+

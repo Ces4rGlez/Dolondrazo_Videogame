@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -115,7 +115,7 @@ public class ArcadeHUDTimer : MonoBehaviour
 
     private void EnsureTimerUI()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         if (timerContainer != null) return;
@@ -179,4 +179,5 @@ public class ArcadeHUDTimer : MonoBehaviour
         valueText.text = currentTime.ToString("D2");
     }
 }
+
 

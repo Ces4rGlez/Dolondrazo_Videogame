@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -176,7 +176,7 @@ public class GameOverManager : MonoBehaviour
 
     private void BuildGameOverPanel()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -238,7 +238,7 @@ public class GameOverManager : MonoBehaviour
         titleText.alignment = TextAnchor.MiddleCenter;
         titleText.color     = new Color(1f, 0.22f, 0.2f, 1f);
 
-        // Subtitulo tematico dramático
+        // Subtitulo tematico dramÃ¡tico
         MakeText(cardObj.transform, "!PROYECTO NO ENTREGADO! - FERCHO HA SIDO DERROTADO",
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
                  new Vector2(0f, -82f), new Vector2(0f, 30f),
@@ -403,3 +403,4 @@ public class GameOverManager : MonoBehaviour
         if (playerHealth != null) playerHealth.OnDeath -= HandlePlayerDeath;
     }
 }
+

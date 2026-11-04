@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -83,7 +83,7 @@ public class HitEffects : MonoBehaviour
 
     private IEnumerator HitParticleRoutine(Vector3 worldPos, Color color)
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null || Camera.main == null) yield break;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -132,3 +132,4 @@ public class HitEffects : MonoBehaviour
         Destroy(obj);
     }
 }
+

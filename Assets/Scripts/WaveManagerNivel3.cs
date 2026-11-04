@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -90,7 +90,7 @@ public class WaveManagerNivel3 : MonoBehaviour
 
     private void SetupWaveBannerUI()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = HUDCanvasHelper.GetCanvas();
         if (canvas == null) return;
 
         Texture2D tex = new Texture2D(4, 4);
@@ -322,3 +322,4 @@ public class WaveManagerNivel3 : MonoBehaviour
         waveBannerObj.SetActive(false);
     }
 }
+

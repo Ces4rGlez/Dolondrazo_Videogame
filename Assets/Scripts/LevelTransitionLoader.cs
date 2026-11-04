@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -62,6 +62,7 @@ public class LevelTransitionLoader : MonoBehaviour
         canvasGroup = canvasObj.AddComponent<CanvasGroup>();
         canvasGroup.alpha = 0f;
         canvasGroup.blocksRaycasts = false;
+        canvasObj.SetActive(false); // Inactivo por defecto para no interferir con los HUDs de los niveles
 
         Texture2D tex = new Texture2D(2, 2);
         tex.SetPixels(new Color[] { Color.white, Color.white, Color.white, Color.white });
@@ -184,6 +185,7 @@ public class LevelTransitionLoader : MonoBehaviour
         if (progressBarFill != null) progressBarFill.fillAmount = 0f;
         if (progressText != null) progressText.text = "CARGANDO... 0%";
 
+        if (loadingCanvas != null) loadingCanvas.gameObject.SetActive(true);
         canvasGroup.blocksRaycasts = true;
 
         // Fade In de la pantalla de carga (0.35s)
@@ -236,7 +238,9 @@ public class LevelTransitionLoader : MonoBehaviour
         }
         canvasGroup.alpha = 0f;
         canvasGroup.blocksRaycasts = false;
+        if (loadingCanvas != null) loadingCanvas.gameObject.SetActive(false);
         isTransitioning = false;
     }
 }
+
 

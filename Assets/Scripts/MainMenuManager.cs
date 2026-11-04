@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -144,7 +144,24 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // Cargar Nivel 1 con pantalla de carga fluida
-        LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "¡Llega al CBTis 75 a tiempo!");
+        LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "Â¡Llega al CBTis 75 a tiempo!");
+    }
+
+        public void StartNewAdventure()
+    {
+        PlayClick();
+        Time.timeScale = 1f;
+
+        if (levelSelectModal != null) levelSelectModal.SetActive(false);
+
+        // Si existe el ComicPrologueManager, mostrar la historieta antes de entrar al Nivel 1
+        if (ComicPrologueManager.Instance != null)
+        {
+            ComicPrologueManager.Instance.ShowPrologue(autoLoadLevelOnFinish: true);
+            return;
+        }
+
+        LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "Â¡Llega al CBTis 75 a tiempo!");
     }
 
     public void OpenLevelSelectModal()
@@ -437,37 +454,62 @@ public class MainMenuManager : MonoBehaviour
                  new Color(1f, 0.92f, 0.45f, 1f), "Text_PressStart");
 
         // === 4. BOTONES DEL MENU (Distribuidos, Nitidos y con Micro-interaccion) ===
+        int maxUnlocked = GameSaveManager.GetMaxUnlockedLevel();
+        bool hasSavedProgress = (maxUnlocked > 1);
+
         float startY = -285f;
-        float spacingY = 86f;
+        float spacingY = hasSavedProgress ? 76f : 86f;
         float btnWidth = 480f;
-        float btnHeight = 70f;
+        float btnHeight = hasSavedProgress ? 64f : 70f;
+        int btnIndex = 0;
 
-        // 1. Iniciar Aventura
-        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY), new Vector2(btnWidth, btnHeight),
-                             "INICIAR AVENTURA", ">",
-                             new Color(0.06f, 0.35f, 0.18f, 0.95f),
-                             new Color(0.12f, 0.65f, 0.35f, 1f),
-                             new Color(0.1f, 1f, 0.5f, 1f),
-                             "Btn_Play", OnPlayClicked);
+        if (hasSavedProgress)
+        {
+            // 1. Continuar / Seleccionar Nivel
+            MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * (btnIndex++)), new Vector2(btnWidth, btnHeight),
+                                 "CONTINUAR / NIVELES", ">",
+                                 new Color(0.06f, 0.35f, 0.18f, 0.95f),
+                                 new Color(0.12f, 0.65f, 0.35f, 1f),
+                                 new Color(0.1f, 1f, 0.5f, 1f),
+                                 "Btn_Continue", OpenLevelSelectModal);
 
-        // 2. Opciones de Audio
-        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY), new Vector2(btnWidth, btnHeight),
+            // 2. Iniciar Nueva Aventura
+            MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * (btnIndex++)), new Vector2(btnWidth, btnHeight),
+                                 "NUEVA AVENTURA", "+",
+                                 new Color(0.18f, 0.28f, 0.08f, 0.95f),
+                                 new Color(0.35f, 0.55f, 0.15f, 1f),
+                                 new Color(0.65f, 0.95f, 0.2f, 1f),
+                                 "Btn_NewGame", StartNewAdventure);
+        }
+        else
+        {
+            // 1. Iniciar Aventura
+            MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * (btnIndex++)), new Vector2(btnWidth, btnHeight),
+                                 "INICIAR AVENTURA", ">",
+                                 new Color(0.06f, 0.35f, 0.18f, 0.95f),
+                                 new Color(0.12f, 0.65f, 0.35f, 1f),
+                                 new Color(0.1f, 1f, 0.5f, 1f),
+                                 "Btn_Play", OnPlayClicked);
+        }
+
+        // Opciones de Audio
+        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * (btnIndex++)), new Vector2(btnWidth, btnHeight),
                              "AJUSTES DE AUDIO", "=",
                              new Color(0.06f, 0.24f, 0.48f, 0.95f),
                              new Color(0.14f, 0.45f, 0.85f, 1f),
                              new Color(0.25f, 0.82f, 1f, 1f),
                              "Btn_Options", OnOptionsClicked);
 
-        // 3. Historia y Controles
-        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * 2), new Vector2(btnWidth, btnHeight),
+        // Mision y Controles
+        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * (btnIndex++)), new Vector2(btnWidth, btnHeight),
                              "MISION Y CONTROLES", "?",
                              new Color(0.28f, 0.12f, 0.48f, 0.95f),
                              new Color(0.50f, 0.22f, 0.80f, 1f),
                              new Color(0.85f, 0.45f, 1f, 1f),
                              "Btn_Story", OnStoryClicked);
 
-        // 4. Salir
-        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * 3), new Vector2(btnWidth, btnHeight),
+        // Salir
+        MakeStyledMenuButton(canvas.transform, white, new Vector2(colX, startY - spacingY * (btnIndex++)), new Vector2(btnWidth, btnHeight),
                              "SALIR DEL JUEGO", "X",
                              new Color(0.38f, 0.08f, 0.12f, 0.95f),
                              new Color(0.65f, 0.16f, 0.22f, 1f),
@@ -501,9 +543,9 @@ public class MainMenuManager : MonoBehaviour
                  18, FontStyle.Bold, TextAnchor.MiddleLeft,
                  new Color(1f, 0.88f, 0.2f, 1f), "Text_MissionTitle");
 
-        string missionText = "• DESTINO: CBTis 75 (Entrega limite antes de las 2:00 PM)\n" +
-                             "• ESTADO: Sin transporte escolar  |  Bateria de celular: 0%\n" +
-                             "• ALERTA: Calles tomadas por estudiantes rivales del CECyTE";
+        string missionText = "â€¢ DESTINO: CBTis 75 (Entrega limite antes de las 2:00 PM)\n" +
+                             "â€¢ ESTADO: Sin transporte escolar  |  Bateria de celular: 0%\n" +
+                             "â€¢ ALERTA: Calles tomadas por estudiantes rivales del CECyTE";
 
         MakeText(missionCard.transform, missionText,
                  new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
@@ -678,7 +720,7 @@ public class MainMenuManager : MonoBehaviour
         string synopsis = "Eres Fercho, estudiante del CBTis 75 en Dolores Hidalgo, Gto. Hoy es el ultimo dia " +
                           "para entregar tu proyecto escolar final antes de las 2:00 PM. El transporte publico " +
                           "no llego, tu celular se quedo sin bateria y las calles han sido bloqueadas por bandas " +
-                          "rivales del CECyTE. Tu unica opcion: ¡cruzar la ciudad a pie y abrirte paso a golpes!";
+                          "rivales del CECyTE. Tu unica opcion: Â¡cruzar la ciudad a pie y abrirte paso a golpes!";
 
         MakeText(storyModal.transform, synopsis,
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
@@ -702,11 +744,11 @@ public class MainMenuManager : MonoBehaviour
                 new Color(0.35f, 0.88f, 1f, 1f), "ControlsLeftCyan");
 
         string controlsText = "MANDOS DEL JUGADOR (TECLADO):\n\n" +
-                              "• [A] / [D] o [Flechas]     : Mover a Fercho por la calle\n" +
-                              "• [Z] o [J] o [Click Izq]   : Combo de Golpes (Punch & Kick)\n" +
-                              "• [Espacio]                 : Saltar / Esquivar obstaculos\n" +
-                              "• [Esc] o [P]               : Pausar partida y Menu rapido\n" +
-                              "• Rompe las CAJAS de madera con golpes para conseguir comida y recargar salud.";
+                              "â€¢ [A] / [D] o [Flechas]     : Mover a Fercho por la calle\n" +
+                              "â€¢ [Z] o [J] o [Click Izq]   : Combo de Golpes (Punch & Kick)\n" +
+                              "â€¢ [Espacio]                 : Saltar / Esquivar obstaculos\n" +
+                              "â€¢ [Esc] o [P]               : Pausar partida y Menu rapido\n" +
+                              "â€¢ Rompe las CAJAS de madera con golpes para conseguir comida y recargar salud.";
 
         MakeText(controlsCard.transform, controlsText,
                  Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
@@ -929,30 +971,36 @@ public class MainMenuManager : MonoBehaviour
 
         // Nivel 1
         MakeLevelCard(levelSelectModal.transform, white, 1, "NIVEL 1: CALZADA DE LOS HEROES",
-                      "Camino a Dolores Hidalgo • Desafia a los estudiantes del CECyTE",
+                      "Camino a Dolores Hidalgo â€¢ Desafia a los estudiantes del CECyTE",
                       startY, true, () => {
                           Time.timeScale = 1f;
-                          LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "¡Llega al CBTis 75 a tiempo!");
+                          LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "Â¡Llega al CBTis 75 a tiempo!");
                       });
 
         // Nivel 2
         MakeLevelCard(levelSelectModal.transform, white, 2, "NIVEL 2: EL CENTRO Y CINEPOLIS",
-                      "Zona Centro • Enfrenta a las alumnas del Rebsamen y la Directora",
+                      "Zona Centro â€¢ Enfrenta a las alumnas del Rebsamen y la Directora",
                       startY - gapY, maxUnlocked >= 2, () => {
                           Time.timeScale = 1f;
-                          LevelTransitionLoader.LoadLevel("Nivel_2_Cinepolis", "NIVEL 2: EL CENTRO Y CINEPOLIS", "¡Cuidado con los mochilazos!");
+                          LevelTransitionLoader.LoadLevel("Nivel_2_Cinepolis", "NIVEL 2: EL CENTRO Y CINEPOLIS", "Â¡Cuidado con los mochilazos!");
                       });
 
         // Nivel 3
         MakeLevelCard(levelSelectModal.transform, white, 3, "NIVEL 3: CBTIS 75 (BATALLA FINAL)",
-                      "Avenida CBTis 75 • Vence al Prefecto del SABES y al Lic. Mondragon",
+                      "Avenida CBTis 75 â€¢ Vence al Prefecto del SABES y al Lic. Mondragon",
                       startY - gapY * 2, maxUnlocked >= 3, () => {
                           Time.timeScale = 1f;
-                          LevelTransitionLoader.LoadLevel("Nivel_3_CBTIS75", "NIVEL 3: CBTIS 75", "¡Derrota al Director antes de que pase el camion!");
+                          LevelTransitionLoader.LoadLevel("Nivel_3_CBTIS75", "NIVEL 3: CBTIS 75", "Â¡Derrota al Director antes de que pase el camion!");
                       });
 
-        // Boton Cerrar
-        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(0f, -500f), new Vector2(260f, 54f),
+        // Botones Inferiores: Nueva Aventura y Regresar
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(-155f, -500f), new Vector2(260f, 54f),
+                               "+ NUEVA AVENTURA",
+                               new Color(0.12f, 0.45f, 0.22f, 1f),
+                               new Color(0.2f, 0.75f, 0.35f, 1f),
+                               "Btn_NewGameModal", StartNewAdventure);
+
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(155f, -500f), new Vector2(260f, 54f),
                                "<< REGRESAR",
                                new Color(0.25f, 0.28f, 0.38f, 1f),
                                new Color(0.4f, 0.45f, 0.6f, 1f),
@@ -1048,3 +1096,4 @@ public class MenuButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExit
         if (rt != null) rt.localScale = originalScale;
     }
 }
+
