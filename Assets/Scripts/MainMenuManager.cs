@@ -900,42 +900,6 @@ public class MainMenuManager : MonoBehaviour
             }
         }
     }
-}
-
-/// <summary>
-/// Helper de micro-animacion de escala y sonido hover para los botones del menu.
-/// </summary>
-public class MenuButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
-{
-    private Vector3 originalScale;
-    private RectTransform rt;
-    private AudioClip hoverSound;
-
-    public void Init(AudioClip sound)
-    {
-        hoverSound = sound;
-        rt = GetComponent<RectTransform>();
-        if (rt != null) originalScale = rt.localScale;
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        if (rt != null) rt.localScale = originalScale * 1.04f;
-        if (AudioManager.Instance != null && hoverSound != null)
-        {
-            AudioManager.Instance.PlaySFX(hoverSound, 0.5f);
-        }
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        if (rt != null) rt.localScale = originalScale;
-    }
-
-    private void OnDisable()
-    {
-        if (rt != null) rt.localScale = originalScale;
-    }
 
     private void BuildLevelSelectModal(Transform parent, Sprite white)
     {
@@ -1047,5 +1011,40 @@ public class MenuButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExit
                      new Color(0.6f, 0.3f, 0.3f, 0.9f), "LockedText");
         }
     }
+}
 
+/// <summary>
+/// Helper de micro-animacion de escala y sonido hover para los botones del menu.
+/// </summary>
+public class MenuButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+{
+    private Vector3 originalScale;
+    private RectTransform rt;
+    private AudioClip hoverSound;
+
+    public void Init(AudioClip sound)
+    {
+        hoverSound = sound;
+        rt = GetComponent<RectTransform>();
+        if (rt != null) originalScale = rt.localScale;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (rt != null) rt.localScale = originalScale * 1.04f;
+        if (AudioManager.Instance != null && hoverSound != null)
+        {
+            AudioManager.Instance.PlaySFX(hoverSound, 0.5f);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (rt != null) rt.localScale = originalScale;
+    }
+
+    private void OnDisable()
+    {
+        if (rt != null) rt.localScale = originalScale;
+    }
 }
