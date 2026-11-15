@@ -20,8 +20,9 @@ public static class MobileInputBridge
     private static bool _kickPressed;
     private static bool _pausePressed;
 
-    // Dash (doble-tap en la direccion actual)
+    // Dash y Correr continuo (boton Y en movil)
     private static bool _dashPressed;
+    public static bool RunHeld { get; set; } = false;
 
     public static bool JumpPressedThisFrame
     {

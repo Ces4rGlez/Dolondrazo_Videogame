@@ -3,17 +3,18 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// MobileHUD - HUD tactil completo y de alta calidad para Dolondrazo Mobile.
-/// Se instancia automaticamente al arrancar cualquier escena de juego.
-/// Dibuja todo por codigo: joystick virtual, botones de combate con animaciones,
-/// indicador de dash y boton de pausa. Escribe en MobileInputBridge.
-/// 100% compatible con el nuevo Input System Package de Unity.
+/// MobileHUD - HUD táctil moderno estilo Gamepad de consola para Dolondrazo Mobile.
+/// Inspirado en controles modernos de gamepad:
+/// - Izquierda: Joystick analógico con aro de neón y guías direccionales.
+/// - Derecha: Diamante de 4 botones estilo consola (Y=Correr, X=Golpe, B=Patada, A=Saltar).
+/// - Arriba: Botón cápsula estilizado de Pausa [ ❚❚ PAUSA ].
+/// Se instancia automáticamente y garantiza visibilidad en todos los niveles del juego.
 /// </summary>
 public class MobileHUD : MonoBehaviour
 {
-    // ---- Singleton ----
     public static MobileHUD Instance { get; private set; }
 
     // ---- Joystick ----
@@ -25,137 +26,117 @@ public class MobileHUD : MonoBehaviour
     private const float JoystickRadius = 90f;
     private const float ThumbDeadZone = 0.12f;
 
-    // ---- Botones de accion ----
-    private GameObject btnPunch;
-    private GameObject btnKick;
-    private GameObject btnJump;
-
-    // ---- Efectos de pulsacion ----
-    private Image btnPunchImg;
-    private Image btnKickImg;
-    private Image btnJumpImg;
-
-    // ---- Estado de doble tap (Dash) ----
+    // ---- Doble tap para dash rápido ----
     private float lastJoystickTapTime = -1f;
     private Vector2 lastJoystickDir = Vector2.zero;
     private const float DoubleTapWindow = 0.28f;
 
-    // Colores del tema arcade
-    private static readonly Color ColorPunch      = new Color(0.95f, 0.35f, 0.1f,  1f);
-    private static readonly Color ColorPunchGlow  = new Color(1f,    0.6f,  0.2f,  1f);
-    private static readonly Color ColorKick       = new Color(0.1f,  0.5f,  0.95f, 1f);
-    private static readonly Color ColorKickGlow   = new Color(0.3f,  0.75f, 1f,    1f);
-    private static readonly Color ColorJump       = new Color(0.15f, 0.78f, 0.35f, 1f);
-    private static readonly Color ColorJumpGlow   = new Color(0.3f,  1f,    0.55f, 1f);
-    private static readonly Color ColorJoyBase    = new Color(0.08f, 0.1f,  0.18f, 0.75f);
-    private static readonly Color ColorJoyThumb   = new Color(0.3f,  0.6f,  1f,    0.92f);
-    private static readonly Color ColorJoyRing    = new Color(0.25f, 0.55f, 0.9f,  0.5f);
+    // ---- Paleta de colores Gamepad Moderno (Neón sobre Grafito) ----
+    // X = Cian (Golpe / Puñetazo)
+    private static readonly Color ColorX_Cyan    = new Color(0.0f,  0.88f, 1.0f,  1f);
+    // B = Rojo / Coral (Patada)
+    private static readonly Color ColorB_Red     = new Color(1.0f,  0.24f, 0.28f, 1f);
+    // A = Verde Esmeralda (Saltar)
+    private static readonly Color ColorA_Green   = new Color(0.0f,  0.92f, 0.46f, 1f);
+    // Y = Amarillo Oro (Correr / Dash)
+    private static readonly Color ColorY_Yellow  = new Color(1.0f,  0.84f, 0.05f, 1f);
 
-    // ---- Canvas propio del HUD movil ----
+    // Fondo y aros de botones
+    private static readonly Color ColorDarkBase  = new Color(0.06f, 0.08f, 0.13f, 0.78f);
+    private static readonly Color ColorJoyRing   = new Color(0.45f, 0.65f, 0.95f, 0.65f);
+    private static readonly Color ColorJoyThumb  = new Color(0.95f, 0.98f, 1.0f,  0.95f);
+
+    // ---- UI Canvas ----
     private Canvas hudCanvas;
     private RectTransform hudRoot;
-
-    // ---- Pausa ----
     private PauseManager pauseManager;
 
     // ================================================================
-    //  INICIALIZACION AUTOMATICA (RuntimeInitializeOnLoadMethod)
+    //  INICIALIZACIÓN GLOBAL PERMANENTE (Hook antes de cargar escenas)
     // ================================================================
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void AutoInit()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RegisterGlobalHook()
     {
-        // Solo inicializar en escenas de juego, no en el menu
-        string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        if (scene == "Pantalla_Inicio" || scene == "MainMenu" || scene == "Menu_Principal") return;
-
-        // Solo en dispositivos con pantalla tactil o editor para pruebas
-        if (!IsTouchDevice()) return;
-
-        if (Instance != null) return;
-
-        GameObject go = new GameObject("MobileHUD_Controller");
-        DontDestroyOnLoad(go);
-        go.AddComponent<MobileHUD>();
+        SceneManager.sceneLoaded += OnSceneLoadedStatic;
     }
 
-    private static bool IsTouchDevice()
+    private static void OnSceneLoadedStatic(Scene scene, LoadSceneMode mode)
     {
-#if UNITY_EDITOR || UNITY_ANDROID || UNITY_IOS
-        return true;
-#else
-        return Touchscreen.current != null;
-#endif
+        if (Instance == null)
+        {
+            GameObject go = new GameObject("MobileHUD_Controller");
+            DontDestroyOnLoad(go);
+            Instance = go.AddComponent<MobileHUD>();
+        }
+
+        Instance.HandleSceneChange(scene.name);
     }
 
-    // ================================================================
-    //  LIFECYCLE
-    // ================================================================
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    private void OnDestroy()
-    {
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
-    {
-        // Destruir el canvas anterior y reconstruir para la nueva escena
-        if (hudCanvas != null) Destroy(hudCanvas.gameObject);
-
-        string name = scene.name;
-        bool isGameScene = name == "Nivel_1_Calzada" || name == "Nivel_2_Cinepolis" || name == "Nivel_3_CBTIS75";
-        if (!isGameScene) return;
-
-        pauseManager = null;
-        StartCoroutine(BuildHUDNextFrame());
-    }
-
-    private IEnumerator BuildHUDNextFrame()
-    {
-        yield return null; // Esperar un frame para que el HUD del nivel ya exista
-        pauseManager = FindFirstObjectByType<PauseManager>();
-        BuildFullHUD();
     }
 
     private void Start()
     {
-        string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        bool isGameScene = scene == "Nivel_1_Calzada" || scene == "Nivel_2_Cinepolis" || scene == "Nivel_3_CBTIS75";
-        if (isGameScene)
+        HandleSceneChange(SceneManager.GetActiveScene().name);
+    }
+
+    public void HandleSceneChange(string sceneName)
+    {
+        bool isGameScene = sceneName == "Nivel_1_Calzada" || sceneName == "Nivel_2_Cinepolis" || sceneName == "Nivel_3_CBTIS75";
+
+        if (!isGameScene)
         {
-            pauseManager = FindFirstObjectByType<PauseManager>();
-            StartCoroutine(BuildHUDNextFrame());
+            // Ocultar en menús
+            if (hudCanvas != null) hudCanvas.gameObject.SetActive(false);
+            return;
         }
+
+        StartCoroutine(RebuildHUDForCurrentScene());
+    }
+
+    private IEnumerator RebuildHUDForCurrentScene()
+    {
+        // Esperar un frame a que la escena cargue sus elementos iniciales
+        yield return null;
+
+        if (hudCanvas != null)
+        {
+            Destroy(hudCanvas.gameObject);
+        }
+
+        pauseManager = FindFirstObjectByType<PauseManager>();
+        BuildFullModernHUD();
     }
 
     // ================================================================
-    //  CONSTRUCCION DEL HUD
+    //  CONSTRUCCIÓN DEL HUD
     // ================================================================
-    private void BuildFullHUD()
+    private void BuildFullModernHUD()
     {
-        // --- Canvas propio (overlay, encima de todo) ---
-        GameObject canvasGo = new GameObject("Mobile_HUD_Canvas");
+        // 1. Canvas propio (ScreenSpaceOverlay con sortingOrder alto)
+        GameObject canvasGo = new GameObject("Modern_Mobile_HUD_Canvas");
         DontDestroyOnLoad(canvasGo);
         hudCanvas = canvasGo.AddComponent<Canvas>();
         hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        hudCanvas.sortingOrder = 200; // Por encima del HUD del juego
+        hudCanvas.sortingOrder = 400; // Por encima del juego y del HUD de barras
 
-        UnityEngine.UI.CanvasScaler scaler = canvasGo.AddComponent<UnityEngine.UI.CanvasScaler>();
-        scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 1f; // Priorizar altura (landscape)
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 1f;
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        // Asegurar EventSystem con InputSystemUIInputModule (compatible con New Input System)
+        // 2. EventSystem compatible con New Input System
         EventSystem es = FindFirstObjectByType<EventSystem>();
         if (es == null)
         {
@@ -177,295 +158,310 @@ public class MobileHUD : MonoBehaviour
             }
         }
 
-        // Raiz del HUD (pantalla completa)
+        // 3. Raíz del HUD
         hudRoot = new GameObject("HUD_Root", typeof(RectTransform)).GetComponent<RectTransform>();
         hudRoot.SetParent(hudCanvas.transform, false);
         hudRoot.anchorMin = Vector2.zero;
         hudRoot.anchorMax = Vector2.one;
         hudRoot.offsetMin = hudRoot.offsetMax = Vector2.zero;
 
-        Sprite white = MakeWhiteSprite();
-        Sprite circle = MakeCircleSprite(128);
+        Sprite circleFilled = MakeCircleSprite(128);
+        Sprite circleRing   = MakeRingSprite(128, 0.16f);
+        Sprite roundedCapsule = MakeRoundedCapsuleSprite(180, 60, 26);
 
-        BuildJoystick(white, circle);
-        BuildActionButtons(white, circle);
-        BuildPauseButton(white);
+        // Construir controles
+        BuildModernJoystick(circleFilled, circleRing);
+        BuildModernDiamondButtons(circleFilled, circleRing);
+        BuildModernPauseButton(roundedCapsule);
     }
 
     // ================================================================
-    //  JOYSTICK VIRTUAL
+    //  JOYSTICK MODERNO (Izquierda)
     // ================================================================
-    private void BuildJoystick(Sprite white, Sprite circle)
+    private void BuildModernJoystick(Sprite circleFilled, Sprite circleRing)
     {
-        // --- Base exterior (anillo) ---
+        // Base anclada en la esquina inferior izquierda
         GameObject baseGo = new GameObject("Joy_Base", typeof(RectTransform), typeof(Image));
         baseGo.transform.SetParent(hudRoot, false);
         joystickBase = baseGo.GetComponent<RectTransform>();
         joystickBase.anchorMin = new Vector2(0f, 0f);
         joystickBase.anchorMax = new Vector2(0f, 0f);
         joystickBase.pivot     = new Vector2(0.5f, 0.5f);
-        joystickBase.anchoredPosition = new Vector2(220f, 180f);
+        joystickBase.anchoredPosition = new Vector2(230f, 220f);
         joystickBase.sizeDelta = new Vector2(JoystickRadius * 2.2f, JoystickRadius * 2.2f);
 
         Image baseImg = baseGo.GetComponent<Image>();
-        baseImg.sprite = circle;
-        baseImg.color  = ColorJoyBase;
-        baseImg.type   = Image.Type.Simple;
-        baseImg.preserveAspect = true;
+        baseImg.sprite = circleFilled;
+        baseImg.color  = ColorDarkBase;
 
-        // Anillo luminoso exterior
-        GameObject ring = new GameObject("Joy_Ring", typeof(RectTransform), typeof(Image));
-        ring.transform.SetParent(baseGo.transform, false);
-        RectTransform ringRt = ring.GetComponent<RectTransform>();
+        // Anillo de neón exterior
+        GameObject ringGo = new GameObject("Joy_Ring", typeof(RectTransform), typeof(Image));
+        ringGo.transform.SetParent(baseGo.transform, false);
+        RectTransform ringRt = ringGo.GetComponent<RectTransform>();
         ringRt.anchorMin = ringRt.anchorMax = new Vector2(0.5f, 0.5f);
-        ringRt.pivot = new Vector2(0.5f, 0.5f);
+        ringRt.pivot     = new Vector2(0.5f, 0.5f);
         ringRt.anchoredPosition = Vector2.zero;
         ringRt.sizeDelta = new Vector2(JoystickRadius * 2.2f, JoystickRadius * 2.2f);
-        Image ringImg = ring.GetComponent<Image>();
-        ringImg.sprite = circle;
+        Image ringImg = ringGo.GetComponent<Image>();
+        ringImg.sprite = circleRing;
         ringImg.color  = ColorJoyRing;
-        ringImg.type   = Image.Type.Simple;
-        ringImg.preserveAspect = true;
 
-        // Icono de flechas en el centro (texto simbolico)
-        AddJoystickIcon(baseGo.transform);
+        // 4 Flechas direccionales chevrons
+        AddDirectionalMarkers(baseGo.transform);
 
-        // --- Thumb (el circulo interior que se mueve) ---
+        // Thumbstick (puck blanco pulido)
         GameObject thumbGo = new GameObject("Joy_Thumb", typeof(RectTransform), typeof(Image));
         thumbGo.transform.SetParent(baseGo.transform, false);
         joystickThumb = thumbGo.GetComponent<RectTransform>();
         joystickThumb.anchorMin = joystickThumb.anchorMax = new Vector2(0.5f, 0.5f);
         joystickThumb.pivot     = new Vector2(0.5f, 0.5f);
         joystickThumb.anchoredPosition = Vector2.zero;
-        joystickThumb.sizeDelta = new Vector2(70f, 70f);
+        joystickThumb.sizeDelta = new Vector2(74f, 74f);
 
         Image thumbImg = thumbGo.GetComponent<Image>();
-        thumbImg.sprite = circle;
+        thumbImg.sprite = circleFilled;
         thumbImg.color  = ColorJoyThumb;
-        thumbImg.type   = Image.Type.Simple;
-        thumbImg.preserveAspect = true;
 
-        // Brillo interno del thumb
-        GameObject thumbGlow = new GameObject("Joy_Thumb_Glow", typeof(RectTransform), typeof(Image));
-        thumbGlow.transform.SetParent(thumbGo.transform, false);
-        RectTransform tgRt = thumbGlow.GetComponent<RectTransform>();
-        tgRt.anchorMin = tgRt.anchorMax = new Vector2(0.5f, 0.5f);
-        tgRt.pivot = new Vector2(0.5f, 0.5f);
-        tgRt.anchoredPosition = Vector2.zero;
-        tgRt.sizeDelta = new Vector2(38f, 38f);
-        Image tgImg = thumbGlow.GetComponent<Image>();
-        tgImg.sprite = circle;
-        tgImg.color  = new Color(0.65f, 0.88f, 1f, 0.9f);
-        tgImg.preserveAspect = true;
+        // Núcleo interno con sutil tinte cian
+        GameObject thumbCore = new GameObject("Thumb_Core", typeof(RectTransform), typeof(Image));
+        thumbCore.transform.SetParent(thumbGo.transform, false);
+        RectTransform tcRt = thumbCore.GetComponent<RectTransform>();
+        tcRt.anchorMin = tcRt.anchorMax = new Vector2(0.5f, 0.5f);
+        tcRt.pivot     = new Vector2(0.5f, 0.5f);
+        tcRt.anchoredPosition = Vector2.zero;
+        tcRt.sizeDelta = new Vector2(36f, 36f);
+        Image tcImg = thumbCore.GetComponent<Image>();
+        tcImg.sprite = circleFilled;
+        tcImg.color  = new Color(0.1f, 0.65f, 1.0f, 0.85f);
     }
 
-    private void AddJoystickIcon(Transform parent)
+    private void AddDirectionalMarkers(Transform parent)
     {
-        string[] arrows = { "▲", "▼", "◀", "▶" };
-        Vector2[] positions = {
-            new Vector2(0f,  52f),
-            new Vector2(0f, -52f),
-            new Vector2(-52f, 0f),
-            new Vector2( 52f, 0f)
+        string[] markers = { "▲", "▼", "◀", "▶" };
+        Vector2[] pos = {
+            new Vector2(0f,   62f),
+            new Vector2(0f,  -62f),
+            new Vector2(-62f,  0f),
+            new Vector2( 62f,  0f)
         };
 
         for (int i = 0; i < 4; i++)
         {
-            GameObject arrow = new GameObject("Arrow_" + arrows[i], typeof(RectTransform), typeof(Text));
-            arrow.transform.SetParent(parent, false);
-            RectTransform rt = arrow.GetComponent<RectTransform>();
+            GameObject m = new GameObject("Marker_" + i, typeof(RectTransform), typeof(Text));
+            m.transform.SetParent(parent, false);
+            RectTransform rt = m.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = positions[i];
-            rt.sizeDelta = new Vector2(32f, 32f);
-            Text t = arrow.GetComponent<Text>();
+            rt.anchoredPosition = pos[i];
+            rt.sizeDelta = new Vector2(30f, 30f);
+
+            Text t = m.GetComponent<Text>();
             t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            t.text = arrows[i];
-            t.fontSize = 18;
-            t.color = new Color(0.4f, 0.65f, 1f, 0.55f);
+            t.text = markers[i];
+            t.fontSize = 20;
+            t.color = new Color(0.7f, 0.85f, 1f, 0.75f);
             t.alignment = TextAnchor.MiddleCenter;
         }
     }
 
     // ================================================================
-    //  BOTONES DE ACCION
+    //  DIAMANTE DE 4 BOTONES ESTILO GAMEPAD (Derecha)
+    //  Y (Arriba)   = CORRER / DASH
+    //  X (Izquierda)= GOLPE / PUÑETAZO
+    //  B (Derecha)  = PATADA
+    //  A (Abajo)    = SALTAR
     // ================================================================
-    private void BuildActionButtons(Sprite white, Sprite circle)
+    private void BuildModernDiamondButtons(Sprite circleFilled, Sprite circleRing)
     {
-        // Layout ergonomico en el lado derecho de la pantalla
-        float baseX = -220f;
-        float baseY =  180f;
+        // Contenedor del diamante anclado abajo a la derecha
+        GameObject diamondCluster = new GameObject("Diamond_Cluster", typeof(RectTransform));
+        diamondCluster.transform.SetParent(hudRoot, false);
+        RectTransform clusterRt = diamondCluster.GetComponent<RectTransform>();
+        clusterRt.anchorMin = new Vector2(1f, 0f);
+        clusterRt.anchorMax = new Vector2(1f, 0f);
+        clusterRt.pivot     = new Vector2(0.5f, 0.5f);
+        clusterRt.anchoredPosition = new Vector2(-230f, 220f);
+        clusterRt.sizeDelta = new Vector2(260f, 260f);
 
-        btnPunch = BuildActionButton(circle, white,
-            new Vector2(baseX - 95f, baseY - 10f), 95f,
-            "J", "GOLPE", ColorPunch, ColorPunchGlow,
-            () => { MobileInputBridge.PunchPressedThisFrame = true; MobileInputBridge.AnyButtonTouchedThisFrame = true; },
-            ref btnPunchImg);
+        float spread = 78f;  // Distancia del centro del diamante
+        float btnSize = 82f; // Tamaño del botón
 
-        btnKick = BuildActionButton(circle, white,
-            new Vector2(baseX + 95f, baseY - 10f), 95f,
-            "K", "PATADA", ColorKick, ColorKickGlow,
-            () => { MobileInputBridge.KickPressedThisFrame = true; MobileInputBridge.AnyButtonTouchedThisFrame = true; },
-            ref btnKickImg);
+        // 1. Botón Y (Arriba) -> CORRER / DASH
+        BuildModernGamepadButton(diamondCluster.transform, circleFilled, circleRing,
+            new Vector2(0f, spread), btnSize,
+            "Y", "CORRER", ColorY_Yellow,
+            onDown: () => {
+                MobileInputBridge.RunHeld = true;
+                MobileInputBridge.DashPressedThisFrame = true;
+                MobileInputBridge.AnyButtonTouchedThisFrame = true;
+            },
+            onUp: () => {
+                MobileInputBridge.RunHeld = false;
+            });
 
-        btnJump = BuildActionButton(circle, white,
-            new Vector2(baseX, baseY + 95f), 85f,
-            "↑", "SALTAR", ColorJump, ColorJumpGlow,
-            () => { MobileInputBridge.JumpPressedThisFrame = true; MobileInputBridge.AnyButtonTouchedThisFrame = true; },
-            ref btnJumpImg);
+        // 2. Botón X (Izquierda) -> GOLPE (Puñetazo)
+        BuildModernGamepadButton(diamondCluster.transform, circleFilled, circleRing,
+            new Vector2(-spread, 0f), btnSize,
+            "X", "GOLPE", ColorX_Cyan,
+            onDown: () => {
+                MobileInputBridge.PunchPressedThisFrame = true;
+                MobileInputBridge.AnyButtonTouchedThisFrame = true;
+            },
+            onUp: null);
+
+        // 3. Botón B (Derecha) -> PATADA
+        BuildModernGamepadButton(diamondCluster.transform, circleFilled, circleRing,
+            new Vector2(spread, 0f), btnSize,
+            "B", "PATADA", ColorB_Red,
+            onDown: () => {
+                MobileInputBridge.KickPressedThisFrame = true;
+                MobileInputBridge.AnyButtonTouchedThisFrame = true;
+            },
+            onUp: null);
+
+        // 4. Botón A (Abajo) -> SALTAR
+        BuildModernGamepadButton(diamondCluster.transform, circleFilled, circleRing,
+            new Vector2(0f, -spread), btnSize,
+            "A", "SALTAR", ColorA_Green,
+            onDown: () => {
+                MobileInputBridge.JumpPressedThisFrame = true;
+                MobileInputBridge.AnyButtonTouchedThisFrame = true;
+            },
+            onUp: null);
     }
 
-    private GameObject BuildActionButton(Sprite circle, Sprite white,
-        Vector2 anchoredPos, float size,
-        string icon, string label,
-        Color normalColor, Color glowColor,
-        System.Action onPress,
-        ref Image imgOut)
+    private void BuildModernGamepadButton(Transform parent, Sprite circleFilled, Sprite circleRing,
+        Vector2 pos, float size, string letter, string actionLabel, Color neonColor,
+        System.Action onDown, System.Action onUp)
     {
-        GameObject root = new GameObject("Btn_" + label, typeof(RectTransform));
-        root.transform.SetParent(hudRoot, false);
-        RectTransform rootRt = root.GetComponent<RectTransform>();
-        rootRt.anchorMin = new Vector2(1f, 0f);
-        rootRt.anchorMax = new Vector2(1f, 0f);
-        rootRt.pivot     = new Vector2(0.5f, 0.5f);
-        rootRt.anchoredPosition = anchoredPos;
-        rootRt.sizeDelta = new Vector2(size, size);
+        // Raíz del botón
+        GameObject btnRoot = new GameObject($"Btn_{letter}_{actionLabel}", typeof(RectTransform));
+        btnRoot.transform.SetParent(parent, false);
+        RectTransform rt = btnRoot.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot     = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(size, size);
 
-        // Sombra exterior
-        GameObject shadow = new GameObject("Shadow", typeof(RectTransform), typeof(Image));
-        shadow.transform.SetParent(root.transform, false);
-        RectTransform shadowRt = shadow.GetComponent<RectTransform>();
-        shadowRt.anchorMin = shadowRt.anchorMax = new Vector2(0.5f, 0.5f);
-        shadowRt.pivot     = new Vector2(0.5f, 0.5f);
-        shadowRt.anchoredPosition = new Vector2(3f, -3f);
-        shadowRt.sizeDelta = new Vector2(size, size);
-        Image shadowImg = shadow.GetComponent<Image>();
-        shadowImg.sprite = circle;
-        shadowImg.color  = new Color(0f, 0f, 0f, 0.4f);
-        shadowImg.preserveAspect = true;
+        // 1. Fondo oscuro circular
+        GameObject bgObj = new GameObject("Bg", typeof(RectTransform), typeof(Image));
+        bgObj.transform.SetParent(btnRoot.transform, false);
+        RectTransform bgRt = bgObj.GetComponent<RectTransform>();
+        bgRt.anchorMin = bgRt.anchorMax = new Vector2(0.5f, 0.5f);
+        bgRt.pivot     = new Vector2(0.5f, 0.5f);
+        bgRt.anchoredPosition = Vector2.zero;
+        bgRt.sizeDelta = new Vector2(size, size);
+        Image bgImg = bgObj.GetComponent<Image>();
+        bgImg.sprite = circleFilled;
+        bgImg.color  = ColorDarkBase;
 
-        // Circulo principal
-        GameObject main = new GameObject("Main", typeof(RectTransform), typeof(Image));
-        main.transform.SetParent(root.transform, false);
-        RectTransform mainRt = main.GetComponent<RectTransform>();
-        mainRt.anchorMin = mainRt.anchorMax = new Vector2(0.5f, 0.5f);
-        mainRt.pivot     = new Vector2(0.5f, 0.5f);
-        mainRt.anchoredPosition = Vector2.zero;
-        mainRt.sizeDelta = new Vector2(size, size);
-        Image mainImg = main.GetComponent<Image>();
-        mainImg.sprite = circle;
-        mainImg.color  = normalColor;
-        mainImg.preserveAspect = true;
-        imgOut = mainImg;
+        // 2. Anillo de neón exterior con el color del botón
+        GameObject ringObj = new GameObject("Neon_Ring", typeof(RectTransform), typeof(Image));
+        ringObj.transform.SetParent(btnRoot.transform, false);
+        RectTransform ringRt = ringObj.GetComponent<RectTransform>();
+        ringRt.anchorMin = ringRt.anchorMax = new Vector2(0.5f, 0.5f);
+        ringRt.pivot     = new Vector2(0.5f, 0.5f);
+        ringRt.anchoredPosition = Vector2.zero;
+        ringRt.sizeDelta = new Vector2(size, size);
+        Image ringImg = ringObj.GetComponent<Image>();
+        ringImg.sprite = circleRing;
+        ringImg.color  = neonColor;
 
-        // Brillo superior (efecto 3D)
-        GameObject shine = new GameObject("Shine", typeof(RectTransform), typeof(Image));
-        shine.transform.SetParent(main.transform, false);
-        RectTransform shineRt = shine.GetComponent<RectTransform>();
-        shineRt.anchorMin = new Vector2(0.1f, 0.55f);
-        shineRt.anchorMax = new Vector2(0.9f, 0.95f);
-        shineRt.offsetMin = shineRt.offsetMax = Vector2.zero;
-        Image shineImg = shine.GetComponent<Image>();
-        shineImg.sprite = circle;
-        shineImg.color  = new Color(1f, 1f, 1f, 0.22f);
-        shineImg.preserveAspect = true;
-
-        // Icono (letra/simbolo)
-        GameObject iconGo = new GameObject("Icon", typeof(RectTransform), typeof(Text));
-        iconGo.transform.SetParent(main.transform, false);
-        RectTransform iconRt = iconGo.GetComponent<RectTransform>();
-        iconRt.anchorMin = new Vector2(0.5f, 0.4f);
-        iconRt.anchorMax = new Vector2(0.5f, 0.75f);
-        iconRt.pivot     = new Vector2(0.5f, 0.5f);
-        iconRt.anchoredPosition = Vector2.zero;
-        iconRt.sizeDelta = new Vector2(size * 0.7f, size * 0.5f);
-        Text iconText = iconGo.GetComponent<Text>();
+        // 3. Letra principal en el centro (Y, X, B, A)
+        GameObject letterObj = new GameObject("Letter", typeof(RectTransform), typeof(Text));
+        letterObj.transform.SetParent(btnRoot.transform, false);
+        RectTransform letterRt = letterObj.GetComponent<RectTransform>();
+        letterRt.anchorMin = new Vector2(0.5f, 0.42f);
+        letterRt.anchorMax = new Vector2(0.5f, 0.85f);
+        letterRt.pivot     = new Vector2(0.5f, 0.5f);
+        letterRt.anchoredPosition = Vector2.zero;
+        letterRt.sizeDelta = new Vector2(size * 0.7f, size * 0.5f);
+        Text letterTxt = letterObj.GetComponent<Text>();
         Font arcadeFont = Resources.Load<Font>("Fonts/ArcadeBold");
         if (arcadeFont == null) arcadeFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        iconText.font      = arcadeFont;
-        iconText.text      = icon;
-        iconText.fontSize  = Mathf.RoundToInt(size * 0.42f);
-        iconText.fontStyle = FontStyle.Bold;
-        iconText.alignment = TextAnchor.MiddleCenter;
-        iconText.color     = new Color(1f, 1f, 1f, 0.95f);
-        Outline outline = iconGo.AddComponent<Outline>();
-        outline.effectColor    = new Color(0f, 0f, 0f, 0.6f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        letterTxt.font      = arcadeFont;
+        letterTxt.text      = letter;
+        letterTxt.fontSize  = Mathf.RoundToInt(size * 0.44f);
+        letterTxt.fontStyle = FontStyle.Bold;
+        letterTxt.alignment = TextAnchor.MiddleCenter;
+        letterTxt.color     = neonColor;
+        Outline letterOut = letterObj.AddComponent<Outline>();
+        letterOut.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        letterOut.effectDistance = new Vector2(1.5f, -1.5f);
 
-        // Etiqueta inferior
-        GameObject labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
-        labelGo.transform.SetParent(main.transform, false);
-        RectTransform labelRt = labelGo.GetComponent<RectTransform>();
-        labelRt.anchorMin = new Vector2(0f, 0.05f);
-        labelRt.anchorMax = new Vector2(1f, 0.3f);
+        // 4. Etiqueta inferior con el nombre de la acción (GOLPE, PATADA, SALTAR, CORRER)
+        GameObject labelObj = new GameObject("Label", typeof(RectTransform), typeof(Text));
+        labelObj.transform.SetParent(btnRoot.transform, false);
+        RectTransform labelRt = labelObj.GetComponent<RectTransform>();
+        labelRt.anchorMin = new Vector2(0f, 0.08f);
+        labelRt.anchorMax = new Vector2(1f, 0.35f);
         labelRt.offsetMin = labelRt.offsetMax = Vector2.zero;
-        Text labelText = labelGo.GetComponent<Text>();
-        labelText.font      = arcadeFont;
-        labelText.text      = label;
-        labelText.fontSize  = Mathf.RoundToInt(size * 0.17f);
-        labelText.fontStyle = FontStyle.Bold;
-        labelText.alignment = TextAnchor.MiddleCenter;
-        labelText.color     = new Color(1f, 1f, 1f, 0.7f);
+        Text labelTxt = labelObj.GetComponent<Text>();
+        labelTxt.font      = arcadeFont;
+        labelTxt.text      = actionLabel;
+        labelTxt.fontSize  = Mathf.RoundToInt(size * 0.16f);
+        labelTxt.fontStyle = FontStyle.Bold;
+        labelTxt.alignment = TextAnchor.MiddleCenter;
+        labelTxt.color     = new Color(1f, 1f, 1f, 0.85f);
+        Outline labelOut = labelObj.AddComponent<Outline>();
+        labelOut.effectColor = new Color(0f, 0f, 0f, 0.9f);
+        labelOut.effectDistance = new Vector2(1f, -1f);
 
-        // Trigger tactil interactivo
-        GameObject trigger = new GameObject("TouchTrigger", typeof(RectTransform), typeof(Image), typeof(MobileButtonTrigger));
-        trigger.transform.SetParent(root.transform, false);
+        // 5. Trigger táctil con animaciones
+        GameObject trigger = new GameObject("Touch_Trigger", typeof(RectTransform), typeof(Image), typeof(ModernButtonTrigger));
+        trigger.transform.SetParent(btnRoot.transform, false);
         RectTransform triggerRt = trigger.GetComponent<RectTransform>();
         triggerRt.anchorMin = Vector2.zero;
         triggerRt.anchorMax = Vector2.one;
         triggerRt.offsetMin = triggerRt.offsetMax = Vector2.zero;
         Image triggerImg = trigger.GetComponent<Image>();
-        triggerImg.color = new Color(0f, 0f, 0f, 0.001f);
-        MobileButtonTrigger mbt = trigger.GetComponent<MobileButtonTrigger>();
-        mbt.Setup(onPress, mainImg, normalColor, glowColor);
+        triggerImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques
 
-        return root;
+        ModernButtonTrigger mbt = trigger.GetComponent<ModernButtonTrigger>();
+        mbt.Setup(onDown, onUp, bgImg, ColorDarkBase, new Color(neonColor.r, neonColor.g, neonColor.b, 0.45f));
     }
 
     // ================================================================
-    //  BOTON DE PAUSA
+    //  BOTÓN DE PAUSA ESTILO CÁPSULA MODERNA (Arriba a la derecha)
     // ================================================================
-    private void BuildPauseButton(Sprite white)
+    private void BuildModernPauseButton(Sprite capsuleSprite)
     {
-        GameObject btnGo = new GameObject("Btn_Pause", typeof(RectTransform), typeof(Image), typeof(Button));
-        btnGo.transform.SetParent(hudRoot, false);
-        RectTransform rt = btnGo.GetComponent<RectTransform>();
+        GameObject pauseObj = new GameObject("Btn_ModernPause", typeof(RectTransform), typeof(Image), typeof(Button));
+        pauseObj.transform.SetParent(hudRoot, false);
+        RectTransform rt = pauseObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot     = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-24f, -24f);
-        rt.sizeDelta = new Vector2(80f, 80f);
+        rt.anchoredPosition = new Vector2(-28f, -24f);
+        rt.sizeDelta = new Vector2(140f, 48f);
 
-        Image bg = btnGo.GetComponent<Image>();
-        bg.sprite = MakeCircleSprite(64);
-        bg.color  = new Color(0.08f, 0.1f, 0.2f, 0.85f);
-        bg.preserveAspect = true;
+        Image bg = pauseObj.GetComponent<Image>();
+        bg.sprite = capsuleSprite;
+        bg.color  = new Color(0.06f, 0.08f, 0.14f, 0.85f);
 
-        GameObject iconGo = new GameObject("PauseIcon", typeof(RectTransform), typeof(Text));
-        iconGo.transform.SetParent(btnGo.transform, false);
-        RectTransform iconRt = iconGo.GetComponent<RectTransform>();
-        iconRt.anchorMin = iconRt.anchorMax = new Vector2(0.5f, 0.5f);
-        iconRt.pivot     = new Vector2(0.5f, 0.5f);
-        iconRt.anchoredPosition = Vector2.zero;
-        iconRt.sizeDelta = new Vector2(80f, 80f);
-        Text iconText = iconGo.GetComponent<Text>();
-        iconText.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        iconText.text      = "❚❚";
-        iconText.fontSize  = 28;
-        iconText.fontStyle = FontStyle.Bold;
-        iconText.alignment = TextAnchor.MiddleCenter;
-        iconText.color     = new Color(1f, 0.88f, 0.2f, 0.95f);
+        GameObject txtObj = new GameObject("Label", typeof(RectTransform), typeof(Text));
+        txtObj.transform.SetParent(pauseObj.transform, false);
+        RectTransform txtRt = txtObj.GetComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = txtRt.offsetMax = Vector2.zero;
+        Text t = txtObj.GetComponent<Text>();
+        t.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        t.text      = "❚❚  PAUSA";
+        t.fontSize  = 16;
+        t.fontStyle = FontStyle.Bold;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.color     = new Color(0.85f, 0.92f, 1f, 0.95f);
 
-        Button btn = btnGo.GetComponent<Button>();
+        Button btn = pauseObj.GetComponent<Button>();
         ColorBlock cb = btn.colors;
-        cb.normalColor      = new Color(0.08f, 0.1f, 0.2f, 0.85f);
-        cb.highlightedColor = new Color(0.15f, 0.2f, 0.4f, 0.95f);
-        cb.pressedColor     = new Color(0.3f,  0.4f, 0.7f, 0.95f);
+        cb.normalColor      = new Color(0.06f, 0.08f, 0.14f, 0.85f);
+        cb.highlightedColor = new Color(0.12f, 0.2f,  0.35f, 0.95f);
+        cb.pressedColor     = new Color(0.2f,  0.35f, 0.6f,  0.95f);
         btn.colors = cb;
         btn.onClick.AddListener(() =>
         {
-            if (pauseManager != null)
-                pauseManager.PauseGame();
+            if (pauseManager != null) pauseManager.PauseGame();
             else
             {
                 pauseManager = FindFirstObjectByType<PauseManager>();
@@ -484,7 +480,7 @@ public class MobileHUD : MonoBehaviour
 
     private void HandleJoystickInput()
     {
-        // 1. Deteccion tactil (dispositivos moviles / simulador tactil)
+        // 1. Detección táctil (Dispositivos móviles Android / iOS)
         var touchScreen = Touchscreen.current;
         if (touchScreen != null)
         {
@@ -524,7 +520,7 @@ public class MobileHUD : MonoBehaviour
             ResetJoystick();
         }
 
-        // 2. Deteccion con Mouse (para pruebas directamente en el Editor de Unity)
+        // 2. Detección con Mouse (pruebas directas en el Editor de Unity)
         var mouse = Mouse.current;
         if (mouse != null)
         {
@@ -564,7 +560,6 @@ public class MobileHUD : MonoBehaviour
             joystickThumb.anchoredPosition = delta;
         }
 
-        // Input normalizado
         float normX = delta.x / JoystickRadius;
         float normY = delta.y / JoystickRadius;
 
@@ -617,9 +612,6 @@ public class MobileHUD : MonoBehaviour
         }
     }
 
-    // ================================================================
-    //  HELPERS DE CONVERSION DE COORDENADAS
-    // ================================================================
     private Vector2 ScreenToCanvasPos(Vector2 screenPos)
     {
         if (hudCanvas == null || hudRoot == null) return screenPos;
@@ -629,18 +621,8 @@ public class MobileHUD : MonoBehaviour
     }
 
     // ================================================================
-    //  GENERADORES DE SPRITES PROCEDURALES
+    //  GENERADORES PROCEDURALES DE SPRITES DE ALTA DEFINICIÓN
     // ================================================================
-    private static Sprite MakeWhiteSprite()
-    {
-        Texture2D tex = new Texture2D(4, 4, TextureFormat.RGBA32, false);
-        Color[] px = new Color[16];
-        for (int i = 0; i < 16; i++) px[i] = Color.white;
-        tex.SetPixels(px);
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
-    }
-
     private static Sprite MakeCircleSprite(int resolution)
     {
         Texture2D tex = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false);
@@ -648,7 +630,7 @@ public class MobileHUD : MonoBehaviour
         Color[] px = new Color[resolution * resolution];
         Vector2 center = new Vector2(resolution / 2f, resolution / 2f);
         float r = resolution / 2f;
-        float edge = r * 0.92f;
+        float edge = r * 0.94f;
         for (int y = 0; y < resolution; y++)
         {
             for (int x = 0; x < resolution; x++)
@@ -660,61 +642,130 @@ public class MobileHUD : MonoBehaviour
         }
         tex.SetPixels(px);
         tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, resolution, resolution),
-                             new Vector2(0.5f, 0.5f), resolution);
+        return Sprite.Create(tex, new Rect(0, 0, resolution, resolution), new Vector2(0.5f, 0.5f), resolution);
+    }
+
+    private static Sprite MakeRingSprite(int resolution, float strokeThicknessRatio)
+    {
+        Texture2D tex = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        Color[] px = new Color[resolution * resolution];
+        Vector2 center = new Vector2(resolution / 2f, resolution / 2f);
+        float outerR = resolution / 2f;
+        float strokePx = outerR * strokeThicknessRatio;
+        float innerR = outerR - strokePx;
+
+        for (int y = 0; y < resolution; y++)
+        {
+            for (int x = 0; x < resolution; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                float outerAlpha = Mathf.Clamp01((outerR - dist) / 1.5f);
+                float innerAlpha = Mathf.Clamp01((dist - innerR) / 1.5f);
+                float alpha = Mathf.Min(outerAlpha, innerAlpha);
+                px[y * resolution + x] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+        tex.SetPixels(px);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, resolution, resolution), new Vector2(0.5f, 0.5f), resolution);
+    }
+
+    private static Sprite MakeRoundedCapsuleSprite(int width, int height, int radius)
+    {
+        Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        Color[] px = new Color[width * height];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float dist = 0f;
+                if (x < radius)
+                {
+                    dist = Vector2.Distance(new Vector2(x, y), new Vector2(radius, height / 2f));
+                }
+                else if (x > width - radius)
+                {
+                    dist = Vector2.Distance(new Vector2(x, y), new Vector2(width - radius, height / 2f));
+                }
+                else
+                {
+                    dist = Mathf.Abs(y - height / 2f);
+                }
+
+                float alpha = Mathf.Clamp01((radius - dist) / 1.5f);
+                px[y * width + x] = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+        tex.SetPixels(px);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 }
 
 // ====================================================================
-//  COMPONENTE AUXILIAR: MobileButtonTrigger
-//  Detecta toques con soporte multi-touch y anima el boton al presionar
+//  COMPONENTE AUXILIAR: ModernButtonTrigger
+//  Maneja pulsaciones instantáneas, sostener (para Correr) y micro-animación
 // ====================================================================
-public class MobileButtonTrigger : MonoBehaviour,
-    IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
+public class ModernButtonTrigger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    private System.Action onPressAction;
-    private Image targetImage;
+    private System.Action onDownAction;
+    private System.Action onUpAction;
+    private Image targetBg;
     private Color normalColor;
     private Color pressedColor;
-    private Coroutine flashRoutine;
+    private Coroutine animRoutine;
 
-    public void Setup(System.Action onPress, Image img, Color normal, Color pressed)
+    public void Setup(System.Action onDown, System.Action onUp, Image bg, Color normal, Color pressed)
     {
-        onPressAction = onPress;
-        targetImage   = img;
-        normalColor   = normal;
-        pressedColor  = pressed;
+        onDownAction = onDown;
+        onUpAction   = onUp;
+        targetBg     = bg;
+        normalColor  = normal;
+        pressedColor = pressed;
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        onPressAction?.Invoke();
-        if (flashRoutine != null) StopCoroutine(flashRoutine);
-        flashRoutine = StartCoroutine(FlashButton());
+        onDownAction?.Invoke();
+
+        if (animRoutine != null) StopCoroutine(animRoutine);
+        animRoutine = StartCoroutine(AnimatePress(true));
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (targetImage != null)
-            targetImage.color = normalColor;
+        onUpAction?.Invoke();
+
+        if (animRoutine != null) StopCoroutine(animRoutine);
+        animRoutine = StartCoroutine(AnimatePress(false));
     }
 
-    public void OnPointerClick(PointerEventData eventData) { /* Manejado en OnPointerDown */ }
-
-    private IEnumerator FlashButton()
+    private IEnumerator AnimatePress(bool isDown)
     {
-        if (targetImage == null) yield break;
+        Transform parentTransform = transform.parent;
+        Vector3 targetScale = isDown ? new Vector3(0.88f, 0.88f, 1f) : Vector3.one;
 
-        // Flash de presion (escala + color)
-        targetImage.color = pressedColor;
-        RectTransform rt  = targetImage.GetComponent<RectTransform>();
-        Vector3 origScale = rt != null ? rt.localScale : Vector3.one;
+        if (targetBg != null)
+        {
+            targetBg.color = isDown ? pressedColor : normalColor;
+        }
 
-        if (rt != null) rt.localScale = origScale * 0.88f;
-        yield return new WaitForSecondsRealtime(0.08f);
+        if (parentTransform != null)
+        {
+            float elapsed = 0f;
+            Vector3 startScale = parentTransform.localScale;
+            while (elapsed < 0.06f)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                parentTransform.localScale = Vector3.Lerp(startScale, targetScale, elapsed / 0.06f);
+                yield return null;
+            }
+            parentTransform.localScale = targetScale;
+        }
 
-        if (rt != null) rt.localScale = origScale;
-        targetImage.color = normalColor;
-        flashRoutine = null;
+        animRoutine = null;
     }
 }

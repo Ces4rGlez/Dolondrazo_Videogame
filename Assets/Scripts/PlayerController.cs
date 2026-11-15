@@ -127,10 +127,11 @@ public class PlayerController : MonoBehaviour
             moveY = mobileY;
         }
 
-        // --- 2. Correr (mantener Shift / L1 / doble-tap en movil) ---
+        // --- 2. Correr (mantener Shift / L1 / doble-tap o boton Y en movil) ---
         bool isRunHeld = (keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
                       || (gamepad != null && gamepad.leftShoulder.isPressed)
-                      || MobileInputBridge.DashPressedThisFrame;
+                      || MobileInputBridge.DashPressedThisFrame
+                      || MobileInputBridge.RunHeld;
         float currentSpeed = (isRunHeld && moveInput.sqrMagnitude > 0.1f) ? runSpeed : walkSpeed;
 
         moveInput = new Vector2(moveX, moveY).normalized;
@@ -187,7 +188,8 @@ public class PlayerController : MonoBehaviour
         {
             float currentSpeed = ((Keyboard.current != null &&
                 (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed))
-                || MobileInputBridge.DashPressedThisFrame)
+                || MobileInputBridge.DashPressedThisFrame
+                || MobileInputBridge.RunHeld)
                 ? runSpeed : walkSpeed;
             rb.linearVelocity = moveInput * currentSpeed;
         }
