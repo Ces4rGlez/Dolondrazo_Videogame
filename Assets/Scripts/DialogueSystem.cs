@@ -50,16 +50,52 @@ public class DialogueSystem : MonoBehaviour
         BuildDialogueUI();
     }
 
+    private bool IsAdvancePressed()
+    {
+        // 1. Teclado
+        if (UnityEngine.InputSystem.Keyboard.current != null)
+        {
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.zKey.wasPressedThisFrame)
+                return true;
+        }
+
+        // 2. Pantalla tactil (Movil / Tablet)
+        if (UnityEngine.InputSystem.Touchscreen.current != null)
+        {
+            var ts = UnityEngine.InputSystem.Touchscreen.current;
+            if (ts.primaryTouch.press.wasPressedThisFrame)
+                return true;
+        }
+
+        // 3. Raton (Editor / PC)
+        if (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            return true;
+        }
+
+        // 4. Gamepad
+        if (UnityEngine.InputSystem.Gamepad.current != null)
+        {
+            var gp = UnityEngine.InputSystem.Gamepad.current;
+            if (gp.buttonSouth.wasPressedThisFrame || gp.buttonWest.wasPressedThisFrame)
+                return true;
+        }
+
+        // 5. Botones tactiles virtuales
+        if (MobileInputBridge.JumpPressedThisFrame || MobileInputBridge.PunchPressedThisFrame || MobileInputBridge.KickPressedThisFrame)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private void Update()
     {
         if (!isActive) return;
 
-        bool advancePressed = UnityEngine.InputSystem.Keyboard.current != null &&
-            (UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame ||
-             UnityEngine.InputSystem.Keyboard.current.enterKey.wasPressedThisFrame ||
-             UnityEngine.InputSystem.Keyboard.current.zKey.wasPressedThisFrame);
-
-        if (advancePressed)
+        if (IsAdvancePressed())
         {
             if (isTyping) skipRequested = true;
         }
@@ -175,11 +211,7 @@ public class DialogueSystem : MonoBehaviour
 
         while (true)
         {
-            bool pressed = UnityEngine.InputSystem.Keyboard.current != null &&
-                (UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame ||
-                 UnityEngine.InputSystem.Keyboard.current.enterKey.wasPressedThisFrame ||
-                 UnityEngine.InputSystem.Keyboard.current.zKey.wasPressedThisFrame);
-            if (pressed) yield break;
+            if (IsAdvancePressed()) yield break;
             yield return null;
         }
     }
@@ -320,17 +352,17 @@ public class DialogueSystem : MonoBehaviour
         textOut.effectColor = new Color(0.01f, 0.02f, 0.05f, 0.95f);
         textOut.effectDistance = new Vector2(1.5f, -1.5f);
 
-        // Prompt "continuar"
+        // Prompt "continuar" adaptado para movil y PC
         continuePrompt = new GameObject("Continue_Prompt", typeof(RectTransform), typeof(Text));
         continuePrompt.transform.SetParent(dialoguePanel.transform, false);
         RectTransform rcp = continuePrompt.GetComponent<RectTransform>();
         rcp.anchorMin = new Vector2(1f,0f); rcp.anchorMax = new Vector2(1f,0f);
         rcp.pivot = new Vector2(1f,0f);
         rcp.anchoredPosition = new Vector2(-25f, 12f);
-        rcp.sizeDelta = new Vector2(250f, 30f);
+        rcp.sizeDelta = new Vector2(360f, 32f);
         Text cpText = continuePrompt.GetComponent<Text>();
         cpText.font = boldFont;
-        cpText.text = "[ESPACIO / ENTER] continuar >>";
+        cpText.text = Application.isMobilePlatform ? "[TOCA LA PANTALLA] continuar >>" : "[ESPACIO / TOCA PANTALLA] >>";
         cpText.fontSize = 17;
         cpText.fontStyle = FontStyle.Bold;
         cpText.alignment = TextAnchor.LowerRight;
@@ -340,6 +372,14 @@ public class DialogueSystem : MonoBehaviour
         cpOut.effectDistance = new Vector2(1.5f, -1.5f);
         continuePrompt.SetActive(false);
         StartCoroutine(BlinkPrompt(cpText));
+
+        // Hacer que tocar el panel completo tambien avance el dialogo
+        Button panelBtn = dialoguePanel.AddComponent<Button>();
+        panelBtn.transition = Selectable.Transition.None;
+        panelBtn.onClick.AddListener(() =>
+        {
+            if (isTyping) skipRequested = true;
+        });
 
         dialoguePanel.SetActive(false);
     }

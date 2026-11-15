@@ -181,7 +181,19 @@ public class BusHazard : MonoBehaviour
             boardPromptText.fontStyle = FontStyle.Bold;
             boardPromptText.alignment = TextAnchor.MiddleCenter;
             boardPromptText.color = Color.white;
-            boardPromptText.text = ">> PRESIONA [E] PARA SUBIR AL AUTOBUS <<";
+            boardPromptText.text = Application.isMobilePlatform
+                ? ">> TOCA AQUI PARA SUBIR AL AUTOBUS <<"
+                : ">> PRESIONA [E] O TOCA AQUI PARA SUBIR <<";
+
+            Button boardBtn = boardPromptObj.AddComponent<Button>();
+            boardBtn.transition = Selectable.Transition.None;
+            boardBtn.onClick.AddListener(() =>
+            {
+                if (playerCanBoard && currentMode == BusMode.Parked)
+                {
+                    StartCoroutine(BoardAndDepartRoutine());
+                }
+            });
 
             boardPromptObj.SetActive(false);
         }
@@ -293,7 +305,9 @@ public class BusHazard : MonoBehaviour
             var gamepad = Gamepad.current;
 
             bool boardPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame))
-                             || (gamepad != null && (gamepad.buttonSouth.wasPressedThisFrame || gamepad.buttonWest.wasPressedThisFrame));
+                             || (gamepad != null && (gamepad.buttonSouth.wasPressedThisFrame || gamepad.buttonWest.wasPressedThisFrame))
+                             || (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+                             || MobileInputBridge.JumpPressedThisFrame || MobileInputBridge.PunchPressedThisFrame;
 
             if (boardPressed)
             {

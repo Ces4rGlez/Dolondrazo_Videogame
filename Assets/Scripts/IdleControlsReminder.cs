@@ -66,17 +66,36 @@ public class IdleControlsReminder : MonoBehaviour
 
     private bool CheckAnyPlayerInput()
     {
-        if (Keyboard.current == null) return false;
+        // En movil, los controles tactiles cuentan como actividad
+        if (Mathf.Abs(MobileInputBridge.MoveX) > 0.05f || Mathf.Abs(MobileInputBridge.MoveY) > 0.05f ||
+            MobileInputBridge.JumpPressedThisFrame || MobileInputBridge.PunchPressedThisFrame || MobileInputBridge.KickPressedThisFrame ||
+            MobileInputBridge.AnyButtonTouchedThisFrame)
+        {
+            return true;
+        }
 
-        var kb = Keyboard.current;
-        return kb.wKey.isPressed || kb.sKey.isPressed || kb.aKey.isPressed || kb.dKey.isPressed ||
-               kb.upArrowKey.isPressed || kb.downArrowKey.isPressed || kb.leftArrowKey.isPressed || kb.rightArrowKey.isPressed ||
-               kb.jKey.isPressed || kb.kKey.isPressed || kb.zKey.isPressed || kb.xKey.isPressed ||
-               kb.eKey.isPressed || kb.spaceKey.isPressed;
+        if (UnityEngine.InputSystem.Touchscreen.current != null && UnityEngine.InputSystem.Touchscreen.current.primaryTouch.press.isPressed)
+        {
+            return true;
+        }
+
+        if (Keyboard.current != null)
+        {
+            var kb = Keyboard.current;
+            return kb.wKey.isPressed || kb.sKey.isPressed || kb.aKey.isPressed || kb.dKey.isPressed ||
+                   kb.upArrowKey.isPressed || kb.downArrowKey.isPressed || kb.leftArrowKey.isPressed || kb.rightArrowKey.isPressed ||
+                   kb.jKey.isPressed || kb.kKey.isPressed || kb.zKey.isPressed || kb.xKey.isPressed ||
+                   kb.eKey.isPressed || kb.spaceKey.isPressed;
+        }
+
+        return false;
     }
 
     public void ShowReminder()
     {
+        // En dispositivos moviles no mostrar la guia de teclado de PC
+        if (Application.isMobilePlatform) return;
+
         if (isVisible) return;
         isVisible = true;
 

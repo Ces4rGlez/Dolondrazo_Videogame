@@ -109,22 +109,13 @@ public class CreditsAndEndingManager : MonoBehaviour
                     busTransform.anchoredPosition = new Vector2(-600f, -260f + wobble);
                 }
 
-                // Acelerar creditos si se mantiene pulsado Espacio o flecha abajo
-                if (Keyboard.current != null)
+                // Acelerar creditos si se mantiene pulsado Espacio, flecha abajo o toque en pantalla
+                bool accelerate = (Keyboard.current != null && (Keyboard.current.spaceKey.isPressed || Keyboard.current.downArrowKey.isPressed))
+                               || (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed);
+                rollSpeed = accelerate ? 120f : 42f;
+                if (Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame))
                 {
-                    if (Keyboard.current.spaceKey.isPressed || Keyboard.current.downArrowKey.isPressed)
-                    {
-                        rollSpeed = 120f;
-                    }
-                    else
-                    {
-                        rollSpeed = 42f;
-                    }
-
-                    if (Keyboard.current.escapeKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)
-                    {
-                        ReturnToMenu();
-                    }
+                    ReturnToMenu();
                 }
             }
         }
