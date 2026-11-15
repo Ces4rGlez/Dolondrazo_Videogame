@@ -333,16 +333,6 @@ public class MobileHUD : MonoBehaviour
             t.raycastTarget = false;
         }
     }
-            rt.sizeDelta = new Vector2(38f, 38f);
-
-            Text t = m.GetComponent<Text>();
-            t.font = sansFont;
-            t.text = markers[i];
-            t.fontSize = 22;
-            t.color = new Color(0.88f, 0.94f, 1f, 0.85f);
-            t.alignment = TextAnchor.MiddleCenter;
-        }
-    }
 
     // ================================================================
     //  DIAMANTE PROFESIONAL DE 4 BOTONES AMPLIADOS (+50% tamaño)
