@@ -98,28 +98,39 @@ public class PlayerController : MonoBehaviour
         }
 
         var keyboard = Keyboard.current;
-        if (keyboard == null) return;
+        var gamepad  = Gamepad.current;
 
-        // --- 1. Lectura de movimiento ---
+        // --- 1. Lectura de movimiento (Teclado + Gamepad + Movil) ---
         float moveX = 0f;
         float moveY = 0f;
 
-        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)    moveY += 1f;
-        if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)  moveY -= 1f;
-        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)  moveX -= 1f;
-        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) moveX += 1f;
+        if (keyboard != null)
+        {
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)    moveY += 1f;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)  moveY -= 1f;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)  moveX -= 1f;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) moveX += 1f;
+        }
 
-        // Gamepad
-        var gamepad = Gamepad.current;
         if (gamepad != null)
         {
             Vector2 stick = gamepad.leftStick.ReadValue();
             if (stick.sqrMagnitude > 0.1f) { moveX = stick.x; moveY = stick.y; }
         }
 
-        // --- 2. Correr (mantener Shift) ---
-        bool isRunHeld = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed
-                      || (gamepad != null && gamepad.leftShoulder.isPressed);
+        // Input movil (joystick virtual)
+        float mobileX = MobileInputBridge.MoveX;
+        float mobileY = MobileInputBridge.MoveY;
+        if (Mathf.Abs(mobileX) > 0.05f || Mathf.Abs(mobileY) > 0.05f)
+        {
+            moveX = mobileX;
+            moveY = mobileY;
+        }
+
+        // --- 2. Correr (mantener Shift / L1 / doble-tap en movil) ---
+        bool isRunHeld = (keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
+                      || (gamepad != null && gamepad.leftShoulder.isPressed)
+                      || MobileInputBridge.DashPressedThisFrame;
         float currentSpeed = (isRunHeld && moveInput.sqrMagnitude > 0.1f) ? runSpeed : walkSpeed;
 
         moveInput = new Vector2(moveX, moveY).normalized;
@@ -136,19 +147,24 @@ public class PlayerController : MonoBehaviour
         if (moveX > 0.05f && !isFacingRight) Flip();
         else if (moveX < -0.05f && isFacingRight) Flip();
 
-        // --- 5. Salto (Espacio) ---
-        bool jumpPressed = keyboard.spaceKey.wasPressedThisFrame
-                        || (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame);
+        // --- 5. Salto (Espacio / Boton Sur gamepad / Boton tactil) ---
+        bool jumpPressed = (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+                        || (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
+                        || MobileInputBridge.JumpPressedThisFrame;
 
         if (jumpPressed && !isJumping)
         {
             jumpCoroutine = StartCoroutine(JumpRoutine());
         }
 
-        // --- 6. Ataques (J = Punetazo, K = Patada) ---
+        // --- 6. Ataques (J = Punetazo, K = Patada / Botones tactiles) ---
         if (IsCarryingItem) return;
-        bool punchPressed = keyboard.jKey.wasPressedThisFrame || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame);
-        bool kickPressed  = keyboard.kKey.wasPressedThisFrame || (gamepad != null && gamepad.buttonNorth.wasPressedThisFrame);
+        bool punchPressed = (keyboard != null && keyboard.jKey.wasPressedThisFrame)
+                         || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
+                         || MobileInputBridge.PunchPressedThisFrame;
+        bool kickPressed  = (keyboard != null && keyboard.kKey.wasPressedThisFrame)
+                         || (gamepad != null && gamepad.buttonNorth.wasPressedThisFrame)
+                         || MobileInputBridge.KickPressedThisFrame;
 
         if (punchPressed && !isJumping) ExecutePunch();
         else if (kickPressed && !isJumping) ExecuteKick();
@@ -169,8 +185,9 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            float currentSpeed = (Keyboard.current != null &&
+            float currentSpeed = ((Keyboard.current != null &&
                 (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed))
+                || MobileInputBridge.DashPressedThisFrame)
                 ? runSpeed : walkSpeed;
             rb.linearVelocity = moveInput * currentSpeed;
         }
@@ -326,6 +343,13 @@ public class PlayerController : MonoBehaviour
                 mashed = true;
             }
         }
+
+        // Mashing tactil para recuperar contusion mas rapido en movil
+        if (MobileInputBridge.AnyButtonTouchedThisFrame)
+        {
+            mashed = true;
+        }
+        MobileInputBridge.AnyButtonTouchedThisFrame = false;
 
         if (mashed)
         {
