@@ -15,17 +15,18 @@ public class MobileHUD : MonoBehaviour
     public static MobileHUD Instance { get; private set; }
 
     // ---- Dimensiones Ampliadas (Máximo confort ergonómico en pantallas móviles) ----
-    private const float JoyBaseDiameter   = 300f; // Base circular espaciosa
-    private const float JoyRadius         = 135f; // Rango fluido de recorrido
-    private const float JoyThumbDiameter  = 112f; // Stick blanco generoso y visible
+    private const float JoyBaseDiameter   = 310f; // Base circular espaciosa
+    private const float JoyRadius         = 140f; // Rango fluido de recorrido
+    private const float JoyThumbDiameter  = 120f; // Stick blanco generoso y visible
     private const float ThumbDeadZone     = 0.10f;
 
-    private const float BtnDiameter       = 138f; // Botones grandes imposibles de fallar
-    private const float DiamondSpread     = 126f; // Separación ergonómica del diamante
+    private const float BtnDiameter       = 152f; // Botones extra grandes y nítidos
+    private const float DiamondSpread     = 136f; // Separación ergonómica del diamante
 
     // ---- Joystick State ----
     private RectTransform joystickBase;
     private RectTransform joystickThumb;
+    private bool isManualRunHeld = false;
 
     // ---- Paleta de Neón y Obsidiana Estilo Gamepad Moderno ----
     // X = Cian Eléctrico (Golpe / Puñetazo)
@@ -190,7 +191,8 @@ public class MobileHUD : MonoBehaviour
         tzRt.anchorMax = new Vector2(0.48f, 0.85f);
         tzRt.offsetMin = tzRt.offsetMax = Vector2.zero;
         Image tzImg = touchZone.GetComponent<Image>();
-        tzImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques
+        tzImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques al 100%
+        tzImg.raycastTarget = true;
 
         // 2. Base del Joystick anclada en la esquina inferior izquierda
         GameObject baseGo = new GameObject("Joy_Base", typeof(RectTransform), typeof(Image));
@@ -199,13 +201,14 @@ public class MobileHUD : MonoBehaviour
         joystickBase.anchorMin = new Vector2(0f, 0f);
         joystickBase.anchorMax = new Vector2(0f, 0f);
         joystickBase.pivot     = new Vector2(0.5f, 0.5f);
-        joystickBase.anchoredPosition = new Vector2(250f, 250f);
+        joystickBase.anchoredPosition = new Vector2(260f, 260f);
         joystickBase.sizeDelta = new Vector2(JoyBaseDiameter, JoyBaseDiameter);
 
-        // Fondo de cristal oscuro
+        // Fondo de cristal oscuro (sin bloquear raycasts)
         Image baseImg = baseGo.GetComponent<Image>();
         baseImg.sprite = cachedCircleFilled;
         baseImg.color  = ColorDarkGlass;
+        baseImg.raycastTarget = false;
 
         // Anillo de guía interior concéntrico (como en el mando de referencia)
         GameObject innerGuide = new GameObject("Inner_Guide_Ring", typeof(RectTransform), typeof(Image));
@@ -218,6 +221,7 @@ public class MobileHUD : MonoBehaviour
         Image igImg = innerGuide.GetComponent<Image>();
         igImg.sprite = cachedThinGuideRing;
         igImg.color  = ColorJoyGuide;
+        igImg.raycastTarget = false;
 
         // Aro exterior nítido
         GameObject ringGo = new GameObject("Outer_Ring", typeof(RectTransform), typeof(Image));
@@ -230,6 +234,7 @@ public class MobileHUD : MonoBehaviour
         Image ringImg = ringGo.GetComponent<Image>();
         ringImg.sprite = cachedOuterJoyRing;
         ringImg.color  = ColorJoyOuter;
+        ringImg.raycastTarget = false;
 
         // 4 Marcadores direccionales triangulares
         AddDirectionalMarkers(baseGo.transform);
@@ -246,6 +251,7 @@ public class MobileHUD : MonoBehaviour
         Image thumbImg = thumbGo.GetComponent<Image>();
         thumbImg.sprite = cachedCircleFilled;
         thumbImg.color  = ColorWhiteThumb;
+        thumbImg.raycastTarget = false;
 
         // Anillo interior sutil en el stick para darle profundidad
         GameObject thumbRing = new GameObject("Thumb_Ring", typeof(RectTransform), typeof(Image));
@@ -258,18 +264,36 @@ public class MobileHUD : MonoBehaviour
         Image trImg = thumbRing.GetComponent<Image>();
         trImg.sprite = cachedThinGuideRing;
         trImg.color  = new Color(0.1f, 0.15f, 0.25f, 0.22f);
+        trImg.raycastTarget = false;
 
-        // Conectar el trigger táctil nativo tanto a la zona táctil como a la base del joystick
+        // Colocar la zona táctil al frente para que ningún gráfico la tape
+        touchZone.transform.SetAsLastSibling();
+
+        // Conectar el trigger táctil nativo para captura fluida y directa
         ModernJoystickTrigger joyTrigger = touchZone.AddComponent<ModernJoystickTrigger>();
         joyTrigger.Setup(joystickBase, joystickThumb, JoyRadius, ThumbDeadZone,
             onMove: (norm) => {
                 MobileInputBridge.MoveX = norm.x;
                 MobileInputBridge.MoveY = norm.y;
                 MobileInputBridge.AnyButtonTouchedThisFrame = (Mathf.Abs(norm.x) > 0.1f || Mathf.Abs(norm.y) > 0.1f);
+
+                // Auto-Sprint en móvil al empujar el stick a fondo (>= 70%)
+                if (norm.magnitude >= 0.70f)
+                {
+                    MobileInputBridge.RunHeld = true;
+                }
+                else if (!isManualRunHeld)
+                {
+                    MobileInputBridge.RunHeld = false;
+                }
             },
             onRelease: () => {
                 MobileInputBridge.MoveX = 0f;
                 MobileInputBridge.MoveY = 0f;
+                if (!isManualRunHeld)
+                {
+                    MobileInputBridge.RunHeld = false;
+                }
             },
             onDoubleTap: () => {
                 MobileInputBridge.DashPressedThisFrame = true;
@@ -280,7 +304,7 @@ public class MobileHUD : MonoBehaviour
     private void AddDirectionalMarkers(Transform parent)
     {
         string[] markers = { "▲", "▼", "◀", "▶" };
-        float dist = (JoyBaseDiameter / 2f) - 20f;
+        float dist = (JoyBaseDiameter / 2f) - 22f;
         Vector2[] pos = {
             new Vector2(0f,   dist),
             new Vector2(0f,  -dist),
@@ -298,6 +322,17 @@ public class MobileHUD : MonoBehaviour
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = pos[i];
+            rt.sizeDelta = new Vector2(30f, 30f);
+
+            Text t = m.GetComponent<Text>();
+            t.font = sansFont;
+            t.text = markers[i];
+            t.fontSize = 18;
+            t.alignment = TextAnchor.MiddleCenter;
+            t.color = new Color(0.75f, 0.85f, 1f, 0.35f);
+            t.raycastTarget = false;
+        }
+    }
             rt.sizeDelta = new Vector2(38f, 38f);
 
             Text t = m.GetComponent<Text>();
@@ -325,20 +360,26 @@ public class MobileHUD : MonoBehaviour
         clusterRt.anchorMin = new Vector2(1f, 0f);
         clusterRt.anchorMax = new Vector2(1f, 0f);
         clusterRt.pivot     = new Vector2(0.5f, 0.5f);
-        clusterRt.anchoredPosition = new Vector2(-280f, 270f);
-        clusterRt.sizeDelta = new Vector2(400f, 400f);
+        clusterRt.anchoredPosition = new Vector2(-290f, 280f);
+        clusterRt.sizeDelta = new Vector2(460f, 460f);
 
         // 1. Botón Y (Arriba) -> CORRER / DASH (Amarillo)
         BuildGamepadButton(diamondCluster.transform,
             new Vector2(0f, DiamondSpread), BtnDiameter,
             "Y", "CORRER", ColorY_Yellow,
             onDown: () => {
+                isManualRunHeld = true;
                 MobileInputBridge.RunHeld = true;
                 MobileInputBridge.DashPressedThisFrame = true;
                 MobileInputBridge.AnyButtonTouchedThisFrame = true;
             },
             onUp: () => {
-                MobileInputBridge.RunHeld = false;
+                isManualRunHeld = false;
+                float curMag = Mathf.Sqrt(MobileInputBridge.MoveX * MobileInputBridge.MoveX + MobileInputBridge.MoveY * MobileInputBridge.MoveY);
+                if (curMag < 0.70f)
+                {
+                    MobileInputBridge.RunHeld = false;
+                }
             });
 
         // 2. Botón X (Izquierda) -> GOLPE (Cian)
@@ -398,6 +439,7 @@ public class MobileHUD : MonoBehaviour
         Image sImg = shadowObj.GetComponent<Image>();
         sImg.sprite = cachedCircleFilled;
         sImg.color = new Color(0f, 0f, 0f, 0.42f);
+        sImg.raycastTarget = false;
 
         // 3. Fondo obsidiana translúcido
         GameObject bgObj = new GameObject("Bg_Glass", typeof(RectTransform), typeof(Image));
@@ -410,6 +452,7 @@ public class MobileHUD : MonoBehaviour
         Image bgImg = bgObj.GetComponent<Image>();
         bgImg.sprite = cachedCircleFilled;
         bgImg.color  = ColorDarkGlass;
+        bgImg.raycastTarget = false;
 
         // 4. Anillo de neón de alta definición
         GameObject ringObj = new GameObject("Neon_Ring", typeof(RectTransform), typeof(Image));
@@ -422,6 +465,7 @@ public class MobileHUD : MonoBehaviour
         Image ringImg = ringObj.GetComponent<Image>();
         ringImg.sprite = cachedNeonRing;
         ringImg.color  = neonColor;
+        ringImg.raycastTarget = false;
 
         // 5. Letra grande estilo consola moderna (Y, X, B, A)
         GameObject letterObj = new GameObject("Letter", typeof(RectTransform), typeof(Text));
@@ -439,6 +483,7 @@ public class MobileHUD : MonoBehaviour
         letterTxt.fontStyle = FontStyle.Bold;
         letterTxt.alignment = TextAnchor.MiddleCenter;
         letterTxt.color     = neonColor;
+        letterTxt.raycastTarget = false;
 
         // Sombra de letra
         Shadow letterShadow = letterObj.AddComponent<Shadow>();
@@ -461,6 +506,7 @@ public class MobileHUD : MonoBehaviour
         labelTxt.fontStyle = FontStyle.Bold;
         labelTxt.alignment = TextAnchor.MiddleCenter;
         labelTxt.color     = new Color(0.92f, 0.95f, 1.0f, 0.88f);
+        labelTxt.raycastTarget = false;
 
         Shadow labelShadow = labelObj.AddComponent<Shadow>();
         labelShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
@@ -475,6 +521,7 @@ public class MobileHUD : MonoBehaviour
         triggerRt.offsetMin = triggerRt.offsetMax = Vector2.zero;
         Image triggerImg = trigger.GetComponent<Image>();
         triggerImg.color = new Color(0f, 0f, 0f, 0.001f);
+        triggerImg.raycastTarget = true;
 
         ModernButtonTrigger mbt = trigger.GetComponent<ModernButtonTrigger>();
         Color glowColor = new Color(neonColor.r, neonColor.g, neonColor.b, 0.40f);
@@ -482,27 +529,27 @@ public class MobileHUD : MonoBehaviour
     }
 
     // ================================================================
-    //  BOTÓN SUPERIOR DE PAUSA VISIBLE Y CENTRADO EN ÁREA SEGURA
+    //  BOTÓN SUPERIOR DE PAUSA VISIBLE Y DESPEJADO
     // ================================================================
     private void BuildModernPauseButton()
     {
         Font sansFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
-        // Posicionado con margen de seguridad respecto al bisel del teléfono (-110f, -48f)
+        // Posicionado a la izquierda del panel de puntuación (-340f, -38f), libre de solapamientos
         GameObject pauseObj = new GameObject("Btn_TopPause", typeof(RectTransform), typeof(Image), typeof(Button));
         pauseObj.transform.SetParent(hudRoot, false);
         RectTransform rt = pauseObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot     = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-110f, -48f);
-        rt.sizeDelta = new Vector2(175f, 56f);
+        rt.anchoredPosition = new Vector2(-340f, -38f);
+        rt.sizeDelta = new Vector2(195f, 68f);
 
         Image bg = pauseObj.GetComponent<Image>();
         bg.sprite = cachedCapsule;
         bg.color  = ColorDarkGlass;
 
-        // Borde fino de cápsula
+        // Borde fino de cápsula neón cian
         GameObject borderObj = new GameObject("Capsule_Border", typeof(RectTransform), typeof(Image));
         borderObj.transform.SetParent(pauseObj.transform, false);
         RectTransform brt = borderObj.GetComponent<RectTransform>();
@@ -511,7 +558,8 @@ public class MobileHUD : MonoBehaviour
         brt.offsetMin = brt.offsetMax = Vector2.zero;
         Image bImg = borderObj.GetComponent<Image>();
         bImg.sprite = cachedCapsule;
-        bImg.color  = new Color(0.70f, 0.85f, 1.0f, 0.65f);
+        bImg.color  = new Color(0.20f, 0.85f, 1.0f, 0.85f);
+        bImg.raycastTarget = false;
 
         // Texto START / PAUSA
         GameObject txtObj = new GameObject("Label", typeof(RectTransform), typeof(Text));
@@ -523,16 +571,21 @@ public class MobileHUD : MonoBehaviour
         Text t = txtObj.GetComponent<Text>();
         t.font      = sansFont;
         t.text      = "❚❚  PAUSA";
-        t.fontSize  = 18;
+        t.fontSize  = 22;
         t.fontStyle = FontStyle.Bold;
         t.alignment = TextAnchor.MiddleCenter;
-        t.color     = new Color(0.92f, 0.96f, 1f, 0.95f);
+        t.color     = Color.white;
+        t.raycastTarget = false;
+
+        Shadow txtShadow = txtObj.AddComponent<Shadow>();
+        txtShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
+        txtShadow.effectDistance = new Vector2(2f, -2f);
 
         Button btn = pauseObj.GetComponent<Button>();
         ColorBlock cb = btn.colors;
         cb.normalColor      = ColorDarkGlass;
-        cb.highlightedColor = new Color(0.12f, 0.20f, 0.35f, 0.90f);
-        cb.pressedColor     = new Color(0.20f, 0.35f, 0.60f, 0.95f);
+        cb.highlightedColor = new Color(0.12f, 0.22f, 0.40f, 0.95f);
+        cb.pressedColor     = new Color(0.22f, 0.42f, 0.70f, 1.0f);
         btn.colors = cb;
         btn.onClick.AddListener(() =>
         {
@@ -660,15 +713,15 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
     private Vector2 lastDir = Vector2.zero;
 
     public void Setup(RectTransform baseRt, RectTransform thumbRt, float radius, float deadzone,
-                      System.Action<Vector2> onMoveCallback, System.Action onReleaseCallback, System.Action onDoubleTapCallback)
+                      System.Action<Vector2> onMove, System.Action onRelease, System.Action onDoubleTap)
     {
         joystickBase  = baseRt;
         joystickThumb = thumbRt;
         maxRadius     = radius;
         deadZone      = deadzone;
-        onMove        = onMoveCallback;
-        onRelease     = onReleaseCallback;
-        onDoubleTap   = onDoubleTapCallback;
+        this.onMove   = onMove;
+        this.onRelease = onRelease;
+        this.onDoubleTap = onDoubleTap;
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -695,11 +748,15 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
         if (joystickBase == null || joystickThumb == null) return;
 
         // Convertir posición de pantalla directamente al espacio local de joystickBase (donde 0,0 es el centro)
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            joystickBase, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
+        // En Canvas ScreenSpaceOverlay, pasar null para la cámara garantiza cálculo exacto en coordenadas de pantalla.
+        Camera eventCam = (eventData.pressEventCamera != null && eventData.pressEventCamera.isActiveAndEnabled) ? eventData.pressEventCamera : null;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(joystickBase, eventData.position, eventCam, out Vector2 localPoint))
+        {
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(joystickBase, eventData.position, null, out localPoint);
+        }
 
         float dist = localPoint.magnitude;
-        Vector2 dir = localPoint / Mathf.Max(dist, 0.001f);
+        Vector2 dir = dist > 0.001f ? localPoint / dist : Vector2.zero;
 
         if (dist > maxRadius) localPoint = dir * maxRadius;
 

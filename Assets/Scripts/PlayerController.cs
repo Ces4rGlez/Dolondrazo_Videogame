@@ -35,6 +35,8 @@ public class PlayerController : MonoBehaviour
     private float groundY;
     public bool IsCarryingItem { get; set; } = false;         // Posicion Y base del personaje
     private Coroutine jumpCoroutine;
+    private float dashBoostTimer = 0f;
+    private bool isRunActive = false;
 
     [Header("Estado de Contusion")]
     private bool isConcussed = false;
@@ -127,28 +129,52 @@ public class PlayerController : MonoBehaviour
             moveY = mobileY;
         }
 
-        // --- 2. Correr (mantener Shift / L1 / doble-tap o boton Y en movil) ---
-        bool isRunHeld = (keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed))
-                      || (gamepad != null && gamepad.leftShoulder.isPressed)
-                      || MobileInputBridge.DashPressedThisFrame
-                      || MobileInputBridge.RunHeld;
-        float currentSpeed = (isRunHeld && moveInput.sqrMagnitude > 0.1f) ? runSpeed : walkSpeed;
+        Vector2 rawInput = new Vector2(moveX, moveY);
+        if (rawInput.sqrMagnitude > 0.001f)
+        {
+            moveInput = rawInput.normalized;
+        }
+        else
+        {
+            moveInput = Vector2.zero;
+        }
 
-        moveInput = new Vector2(moveX, moveY).normalized;
+        // --- 2. Impulso Dash (boton Y en movil o doble tap) ---
+        if (MobileInputBridge.DashPressedThisFrame)
+        {
+            dashBoostTimer = 0.55f;
+            // Si el jugador no se esta moviendo con el joystick al presionar Dash/Y, darle direccion hacia donde mira
+            if (moveInput.sqrMagnitude < 0.1f)
+            {
+                moveInput = isFacingRight ? Vector2.right : Vector2.left;
+            }
+        }
+        if (dashBoostTimer > 0f)
+        {
+            dashBoostTimer -= Time.deltaTime;
+        }
 
-        // --- 3. Animator: Speed, IsRunning ---
+        // --- 3. Correr (mantener Shift / L1 / joystick a fondo / boton Y / dash boost) ---
+        bool keyboardRun = (keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed));
+        bool gamepadRun  = (gamepad != null && gamepad.leftShoulder.isPressed);
+        bool mobileRun   = MobileInputBridge.RunHeld;
+
+        isRunActive = (keyboardRun || gamepadRun || mobileRun || dashBoostTimer > 0f) && moveInput.sqrMagnitude > 0.1f;
+        float currentSpeed = isRunActive ? runSpeed : walkSpeed;
+
+        // --- 4. Animator: Speed, IsRunning ---
         if (animator != null)
         {
             float animSpeed = moveInput.sqrMagnitude * currentSpeed;
             animator.SetFloat("Speed", animSpeed);
-            animator.SetBool("IsRunning", isRunHeld && moveInput.sqrMagnitude > 0.1f);
+            animator.SetBool("IsRunning", isRunActive);
         }
 
-        // --- 4. Voltear sprite ---
-        if (moveX > 0.05f && !isFacingRight) Flip();
-        else if (moveX < -0.05f && isFacingRight) Flip();
+        // --- 5. Voltear sprite ---
+        if (moveInput.x > 0.05f && !isFacingRight) Flip();
+        else if (moveInput.x < -0.05f && isFacingRight) Flip();
 
-        // --- 5. Salto (Espacio / Boton Sur gamepad / Boton tactil) ---
+        // --- 6. Salto (Espacio / Boton Sur gamepad / Boton tactil) ---
         bool jumpPressed = (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
                         || (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
                         || MobileInputBridge.JumpPressedThisFrame;
@@ -158,7 +184,7 @@ public class PlayerController : MonoBehaviour
             jumpCoroutine = StartCoroutine(JumpRoutine());
         }
 
-        // --- 6. Ataques (J = Punetazo, K = Patada / Botones tactiles) ---
+        // --- 7. Ataques (J = Punetazo, K = Patada / Botones tactiles) ---
         if (IsCarryingItem) return;
         bool punchPressed = (keyboard != null && keyboard.jKey.wasPressedThisFrame)
                          || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
@@ -179,18 +205,15 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Durante el salto, solo mover en X (Y lo maneja la corrutina)
+        float currentSpeed = isRunActive ? runSpeed : walkSpeed;
+
+        // Durante el salto, mover en X con la velocidad de carrera/caminata activa
         if (isJumping)
         {
-            rb.linearVelocity = new Vector2(moveInput.x * walkSpeed, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(moveInput.x * currentSpeed, rb.linearVelocity.y);
         }
         else
         {
-            float currentSpeed = ((Keyboard.current != null &&
-                (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed))
-                || MobileInputBridge.DashPressedThisFrame
-                || MobileInputBridge.RunHeld)
-                ? runSpeed : walkSpeed;
             rb.linearVelocity = moveInput * currentSpeed;
         }
     }
