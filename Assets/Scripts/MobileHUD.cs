@@ -6,38 +6,26 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// MobileHUD - Interfaz táctil profesional moderna estilo Gamepad de consola.
-/// Diseñada con estética de mando de última generación (inspirada en mandos de cloud gaming):
-/// - Aros de neón ultra-nítidos con fondo obsidiana translúcido.
-/// - Dimensiones y ergonomía generosas para pantallas táctiles de alta resolución.
-/// - Diamante de 4 botones (X=Golpe, B=Patada, A=Saltar, Y=Correr).
-/// - Joystick analógico con aro exterior, anillo concéntrico de guía y marcadores direccionales.
-/// - Botón cápsula estilizado [ ❚❚ PAUSA ] estilo START de consola.
+/// MobileHUD - Interfaz táctil profesional moderna estilo Gamepad de consola para Dolondrazo Mobile.
+/// Rediseñada con ergonomía ampliada (+50% tamaño), respuesta inmediata vía EventSystem nativo,
+/// y acabado gráfico ultra-nítido inspirado en mandos para Cloud Gaming / Blacknut.
 /// </summary>
 public class MobileHUD : MonoBehaviour
 {
     public static MobileHUD Instance { get; private set; }
 
-    // ---- Dimensiones Profesionales (Optimizadas para pantallas móviles 1080p/FHD+) ----
-    private const float JoyBaseDiameter   = 280f; // Diámetro amplio para maniobrar cómodamente
-    private const float JoyRadius         = 130f; // Rango de desplazamiento del stick
-    private const float JoyThumbDiameter  = 104f; // Tamaño del stick blanco táctil
-    private const float ThumbDeadZone     = 0.12f;
+    // ---- Dimensiones Ampliadas (Máximo confort ergonómico en pantallas móviles) ----
+    private const float JoyBaseDiameter   = 300f; // Base circular espaciosa
+    private const float JoyRadius         = 135f; // Rango fluido de recorrido
+    private const float JoyThumbDiameter  = 112f; // Stick blanco generoso y visible
+    private const float ThumbDeadZone     = 0.10f;
 
-    private const float BtnDiameter       = 122f; // Diámetro generoso de los botones (~50% más grandes)
-    private const float DiamondSpread     = 112f; // Separación del centro del diamante
+    private const float BtnDiameter       = 138f; // Botones grandes imposibles de fallar
+    private const float DiamondSpread     = 126f; // Separación ergonómica del diamante
 
     // ---- Joystick State ----
     private RectTransform joystickBase;
     private RectTransform joystickThumb;
-    private int joystickTouchId = -1;
-    private bool mouseJoystickActive = false;
-    private Vector2 joystickCenter;
-
-    // ---- Doble tap para dash rápido ----
-    private float lastJoystickTapTime = -1f;
-    private Vector2 lastJoystickDir = Vector2.zero;
-    private const float DoubleTapWindow = 0.28f;
 
     // ---- Paleta de Neón y Obsidiana Estilo Gamepad Moderno ----
     // X = Cian Eléctrico (Golpe / Puñetazo)
@@ -50,10 +38,10 @@ public class MobileHUD : MonoBehaviour
     private static readonly Color ColorY_Yellow  = new Color(1.00f, 0.86f, 0.05f, 1.0f);
 
     // Fondos y Aros
-    private static readonly Color ColorDarkGlass   = new Color(0.05f, 0.07f, 0.11f, 0.72f);
-    private static readonly Color ColorJoyOuter    = new Color(0.85f, 0.90f, 0.98f, 0.55f);
-    private static readonly Color ColorJoyGuide    = new Color(0.40f, 0.50f, 0.65f, 0.30f);
-    private static readonly Color ColorWhiteThumb  = new Color(0.98f, 0.98f, 1.00f, 0.96f);
+    private static readonly Color ColorDarkGlass   = new Color(0.05f, 0.07f, 0.11f, 0.74f);
+    private static readonly Color ColorJoyOuter    = new Color(0.85f, 0.90f, 0.98f, 0.60f);
+    private static readonly Color ColorJoyGuide    = new Color(0.40f, 0.50f, 0.65f, 0.35f);
+    private static readonly Color ColorWhiteThumb  = new Color(0.98f, 0.98f, 1.00f, 0.98f);
 
     // ---- UI Canvas ----
     private Canvas hudCanvas;
@@ -183,18 +171,28 @@ public class MobileHUD : MonoBehaviour
         hudRoot.anchorMax = Vector2.one;
         hudRoot.offsetMin = hudRoot.offsetMax = Vector2.zero;
 
-        // Construir controles estilo consola moderna
+        // Construir controles
         BuildModernJoystick();
         BuildModernDiamondCluster();
-        BuildModernTopMenu();
+        BuildModernPauseButton();
     }
 
     // ================================================================
-    //  JOYSTICK MODERNO CON GUÍAS CONCÉNTRICAS (Izquierda)
+    //  JOYSTICK MODERNO CON TOUCH ZONE ULTRA-RESPONSIVO
     // ================================================================
     private void BuildModernJoystick()
     {
-        // Base en la esquina inferior izquierda
+        // 1. Zona táctil completa del lado izquierdo (para capturar cualquier toque del pulgar)
+        GameObject touchZone = new GameObject("Joy_TouchZone", typeof(RectTransform), typeof(Image));
+        touchZone.transform.SetParent(hudRoot, false);
+        RectTransform tzRt = touchZone.GetComponent<RectTransform>();
+        tzRt.anchorMin = new Vector2(0f, 0f);
+        tzRt.anchorMax = new Vector2(0.48f, 0.85f);
+        tzRt.offsetMin = tzRt.offsetMax = Vector2.zero;
+        Image tzImg = touchZone.GetComponent<Image>();
+        tzImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques
+
+        // 2. Base del Joystick anclada en la esquina inferior izquierda
         GameObject baseGo = new GameObject("Joy_Base", typeof(RectTransform), typeof(Image));
         baseGo.transform.SetParent(hudRoot, false);
         joystickBase = baseGo.GetComponent<RectTransform>();
@@ -260,12 +258,29 @@ public class MobileHUD : MonoBehaviour
         Image trImg = thumbRing.GetComponent<Image>();
         trImg.sprite = cachedThinGuideRing;
         trImg.color  = new Color(0.1f, 0.15f, 0.25f, 0.22f);
+
+        // Conectar el trigger táctil nativo tanto a la zona táctil como a la base del joystick
+        ModernJoystickTrigger joyTrigger = touchZone.AddComponent<ModernJoystickTrigger>();
+        joyTrigger.Setup(joystickBase, joystickThumb, JoyRadius, ThumbDeadZone,
+            onMove: (norm) => {
+                MobileInputBridge.MoveX = norm.x;
+                MobileInputBridge.MoveY = norm.y;
+                MobileInputBridge.AnyButtonTouchedThisFrame = (Mathf.Abs(norm.x) > 0.1f || Mathf.Abs(norm.y) > 0.1f);
+            },
+            onRelease: () => {
+                MobileInputBridge.MoveX = 0f;
+                MobileInputBridge.MoveY = 0f;
+            },
+            onDoubleTap: () => {
+                MobileInputBridge.DashPressedThisFrame = true;
+            }
+        );
     }
 
     private void AddDirectionalMarkers(Transform parent)
     {
         string[] markers = { "▲", "▼", "◀", "▶" };
-        float dist = (JoyBaseDiameter / 2f) - 18f;
+        float dist = (JoyBaseDiameter / 2f) - 20f;
         Vector2[] pos = {
             new Vector2(0f,   dist),
             new Vector2(0f,  -dist),
@@ -283,19 +298,19 @@ public class MobileHUD : MonoBehaviour
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = pos[i];
-            rt.sizeDelta = new Vector2(36f, 36f);
+            rt.sizeDelta = new Vector2(38f, 38f);
 
             Text t = m.GetComponent<Text>();
             t.font = sansFont;
             t.text = markers[i];
-            t.fontSize = 20;
+            t.fontSize = 22;
             t.color = new Color(0.88f, 0.94f, 1f, 0.85f);
             t.alignment = TextAnchor.MiddleCenter;
         }
     }
 
     // ================================================================
-    //  DIAMANTE PROFESIONAL DE 4 BOTONES (Derecha)
+    //  DIAMANTE PROFESIONAL DE 4 BOTONES AMPLIADOS (+50% tamaño)
     //  Disposición exacta estilo Mando / Gamepad moderno:
     //  Y (Arriba)   = CORRER / DASH (Amarillo Neón)
     //  X (Izquierda)= GOLPE (Cian Eléctrico)
@@ -310,8 +325,8 @@ public class MobileHUD : MonoBehaviour
         clusterRt.anchorMin = new Vector2(1f, 0f);
         clusterRt.anchorMax = new Vector2(1f, 0f);
         clusterRt.pivot     = new Vector2(0.5f, 0.5f);
-        clusterRt.anchoredPosition = new Vector2(-260f, 250f);
-        clusterRt.sizeDelta = new Vector2(360f, 360f);
+        clusterRt.anchoredPosition = new Vector2(-280f, 270f);
+        clusterRt.sizeDelta = new Vector2(400f, 400f);
 
         // 1. Botón Y (Arriba) -> CORRER / DASH (Amarillo)
         BuildGamepadButton(diamondCluster.transform,
@@ -378,11 +393,11 @@ public class MobileHUD : MonoBehaviour
         RectTransform sRt = shadowObj.GetComponent<RectTransform>();
         sRt.anchorMin = sRt.anchorMax = new Vector2(0.5f, 0.5f);
         sRt.pivot = new Vector2(0.5f, 0.5f);
-        sRt.anchoredPosition = new Vector2(0f, -4f);
+        sRt.anchoredPosition = new Vector2(0f, -5f);
         sRt.sizeDelta = new Vector2(size * 1.05f, size * 1.05f);
         Image sImg = shadowObj.GetComponent<Image>();
         sImg.sprite = cachedCircleFilled;
-        sImg.color = new Color(0f, 0f, 0f, 0.40f);
+        sImg.color = new Color(0f, 0f, 0f, 0.42f);
 
         // 3. Fondo obsidiana translúcido
         GameObject bgObj = new GameObject("Bg_Glass", typeof(RectTransform), typeof(Image));
@@ -415,7 +430,7 @@ public class MobileHUD : MonoBehaviour
         letterRt.anchorMin = new Vector2(0.5f, 0.5f);
         letterRt.anchorMax = new Vector2(0.5f, 0.5f);
         letterRt.pivot     = new Vector2(0.5f, 0.5f);
-        letterRt.anchoredPosition = new Vector2(0f, 9f);
+        letterRt.anchoredPosition = new Vector2(0f, 10f);
         letterRt.sizeDelta = new Vector2(size * 0.7f, size * 0.5f);
         Text letterTxt = letterObj.GetComponent<Text>();
         letterTxt.font      = sansFont;
@@ -428,7 +443,7 @@ public class MobileHUD : MonoBehaviour
         // Sombra de letra
         Shadow letterShadow = letterObj.AddComponent<Shadow>();
         letterShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
-        letterShadow.effectDistance = new Vector2(1.5f, -1.5f);
+        letterShadow.effectDistance = new Vector2(2f, -2f);
 
         // 6. Etiqueta de acción limpia y elegante (GOLPE, PATADA, SALTAR, CORRER)
         GameObject labelObj = new GameObject("Label", typeof(RectTransform), typeof(Text));
@@ -437,8 +452,8 @@ public class MobileHUD : MonoBehaviour
         labelRt.anchorMin = new Vector2(0.5f, 0.5f);
         labelRt.anchorMax = new Vector2(0.5f, 0.5f);
         labelRt.pivot     = new Vector2(0.5f, 0.5f);
-        labelRt.anchoredPosition = new Vector2(0f, -28f);
-        labelRt.sizeDelta = new Vector2(size * 0.9f, 26f);
+        labelRt.anchoredPosition = new Vector2(0f, -32f);
+        labelRt.sizeDelta = new Vector2(size * 0.9f, 28f);
         Text labelTxt = labelObj.GetComponent<Text>();
         labelTxt.font      = sansFont;
         labelTxt.text      = actionLabel;
@@ -467,20 +482,21 @@ public class MobileHUD : MonoBehaviour
     }
 
     // ================================================================
-    //  BOTÓN SUPERIOR DE PAUSA ESTILO START (Cápsula de consola)
+    //  BOTÓN SUPERIOR DE PAUSA VISIBLE Y CENTRADO EN ÁREA SEGURA
     // ================================================================
-    private void BuildModernTopMenu()
+    private void BuildModernPauseButton()
     {
         Font sansFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
+        // Posicionado con margen de seguridad respecto al bisel del teléfono (-110f, -48f)
         GameObject pauseObj = new GameObject("Btn_TopPause", typeof(RectTransform), typeof(Image), typeof(Button));
         pauseObj.transform.SetParent(hudRoot, false);
         RectTransform rt = pauseObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot     = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-36f, -30f);
-        rt.sizeDelta = new Vector2(150f, 50f);
+        rt.anchoredPosition = new Vector2(-110f, -48f);
+        rt.sizeDelta = new Vector2(175f, 56f);
 
         Image bg = pauseObj.GetComponent<Image>();
         bg.sprite = cachedCapsule;
@@ -495,7 +511,7 @@ public class MobileHUD : MonoBehaviour
         brt.offsetMin = brt.offsetMax = Vector2.zero;
         Image bImg = borderObj.GetComponent<Image>();
         bImg.sprite = cachedCapsule;
-        bImg.color  = new Color(0.70f, 0.80f, 0.95f, 0.45f);
+        bImg.color  = new Color(0.70f, 0.85f, 1.0f, 0.65f);
 
         // Texto START / PAUSA
         GameObject txtObj = new GameObject("Label", typeof(RectTransform), typeof(Text));
@@ -507,7 +523,7 @@ public class MobileHUD : MonoBehaviour
         Text t = txtObj.GetComponent<Text>();
         t.font      = sansFont;
         t.text      = "❚❚  PAUSA";
-        t.fontSize  = 16;
+        t.fontSize  = 18;
         t.fontStyle = FontStyle.Bold;
         t.alignment = TextAnchor.MiddleCenter;
         t.color     = new Color(0.92f, 0.96f, 1f, 0.95f);
@@ -527,156 +543,6 @@ public class MobileHUD : MonoBehaviour
                 if (pauseManager != null) pauseManager.PauseGame();
             }
         });
-    }
-
-    // ================================================================
-    //  UPDATE - INPUT NATIVO CON NEW INPUT SYSTEM
-    // ================================================================
-    private void Update()
-    {
-        HandleJoystickInput();
-    }
-
-    private void HandleJoystickInput()
-    {
-        // 1. Detección táctil (Celulares Android / iOS)
-        var touchScreen = Touchscreen.current;
-        if (touchScreen != null)
-        {
-            var touches = touchScreen.touches;
-            for (int i = 0; i < touches.Count; i++)
-            {
-                var t = touches[i];
-                if (!t.isInProgress) continue;
-
-                Vector2 screenPos = t.position.ReadValue();
-                bool isLeftSide   = screenPos.x < Screen.width * 0.45f;
-                int touchId       = t.touchId.ReadValue();
-
-                if (t.press.wasPressedThisFrame && isLeftSide && joystickTouchId == -1)
-                {
-                    joystickTouchId = touchId;
-                    joystickCenter  = ScreenToCanvasPos(screenPos);
-                    SetJoystickBasePosition(joystickCenter);
-                    CheckDoubleTap(Vector2.zero);
-                }
-                else if (touchId == joystickTouchId)
-                {
-                    if (t.press.isPressed)
-                    {
-                        Vector2 canvasPos = ScreenToCanvasPos(screenPos);
-                        UpdateJoystickThumb(canvasPos);
-                    }
-                    else
-                    {
-                        ResetJoystick();
-                    }
-                }
-            }
-        }
-        else if (joystickTouchId != -1)
-        {
-            ResetJoystick();
-        }
-
-        // 2. Detección con Mouse (pruebas directas en el Editor de Unity)
-        var mouse = Mouse.current;
-        if (mouse != null)
-        {
-            Vector2 mouseScreen = mouse.position.ReadValue();
-            bool isLeftSide = mouseScreen.x < Screen.width * 0.45f;
-
-            if (mouse.leftButton.wasPressedThisFrame && isLeftSide && !mouseJoystickActive && joystickTouchId == -1)
-            {
-                mouseJoystickActive = true;
-                joystickCenter = ScreenToCanvasPos(mouseScreen);
-                SetJoystickBasePosition(joystickCenter);
-                CheckDoubleTap(Vector2.zero);
-            }
-            else if (mouse.leftButton.isPressed && mouseJoystickActive)
-            {
-                Vector2 canvasPos = ScreenToCanvasPos(mouseScreen);
-                UpdateJoystickThumb(canvasPos);
-            }
-            else if (mouse.leftButton.wasReleasedThisFrame && mouseJoystickActive)
-            {
-                mouseJoystickActive = false;
-                ResetJoystick();
-            }
-        }
-    }
-
-    private void UpdateJoystickThumb(Vector2 canvasPos)
-    {
-        Vector2 delta = canvasPos - joystickCenter;
-        float dist    = delta.magnitude;
-        Vector2 dir   = delta / Mathf.Max(dist, 0.001f);
-
-        if (dist > JoyRadius) delta = dir * JoyRadius;
-
-        if (joystickThumb != null)
-        {
-            joystickThumb.anchoredPosition = delta;
-        }
-
-        float normX = delta.x / JoyRadius;
-        float normY = delta.y / JoyRadius;
-
-        if (Mathf.Abs(normX) < ThumbDeadZone) normX = 0f;
-        if (Mathf.Abs(normY) < ThumbDeadZone) normY = 0f;
-
-        MobileInputBridge.MoveX = normX;
-        MobileInputBridge.MoveY = normY;
-        MobileInputBridge.AnyButtonTouchedThisFrame = (Mathf.Abs(normX) > 0.1f || Mathf.Abs(normY) > 0.1f);
-
-        CheckDoubleTap(dir);
-    }
-
-    private void CheckDoubleTap(Vector2 dir)
-    {
-        if (dir == Vector2.zero) return;
-        float now = Time.unscaledTime;
-        float dot  = Vector2.Dot(dir.normalized, lastJoystickDir.normalized);
-        bool sameDir = dot > 0.7f;
-
-        if (sameDir && (now - lastJoystickTapTime) < DoubleTapWindow)
-        {
-            MobileInputBridge.DashPressedThisFrame = true;
-            lastJoystickTapTime = -1f;
-        }
-        else
-        {
-            lastJoystickTapTime = now;
-            lastJoystickDir     = dir;
-        }
-    }
-
-    private void ResetJoystick()
-    {
-        joystickTouchId = -1;
-        mouseJoystickActive = false;
-        if (joystickThumb != null)
-        {
-            joystickThumb.anchoredPosition = Vector2.zero;
-        }
-        MobileInputBridge.MoveX = 0f;
-        MobileInputBridge.MoveY = 0f;
-    }
-
-    private void SetJoystickBasePosition(Vector2 canvasPos)
-    {
-        if (joystickBase != null)
-        {
-            joystickBase.anchoredPosition = canvasPos;
-        }
-    }
-
-    private Vector2 ScreenToCanvasPos(Vector2 screenPos)
-    {
-        if (hudCanvas == null || hudRoot == null) return screenPos;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            hudRoot, screenPos, hudCanvas.worldCamera, out Vector2 localPoint);
-        return localPoint;
     }
 
     // ================================================================
@@ -772,6 +638,97 @@ public class MobileHUD : MonoBehaviour
         tex.SetPixels(px);
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+    }
+}
+
+// ====================================================================
+//  COMPONENTE NATIVO: ModernJoystickTrigger
+//  Maneja la entrada del joystick mediante el EventSystem nativo de Unity.
+//  Garantiza respuesta 100% inmediata al toque y arrastre del pulgar.
+// ====================================================================
+public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+{
+    private RectTransform joystickBase;
+    private RectTransform joystickThumb;
+    private float maxRadius;
+    private float deadZone;
+    private System.Action<Vector2> onMove;
+    private System.Action onRelease;
+    private System.Action onDoubleTap;
+
+    private float lastTapTime = -1f;
+    private Vector2 lastDir = Vector2.zero;
+
+    public void Setup(RectTransform baseRt, RectTransform thumbRt, float radius, float deadzone,
+                      System.Action<Vector2> onMoveCallback, System.Action onReleaseCallback, System.Action onDoubleTapCallback)
+    {
+        joystickBase  = baseRt;
+        joystickThumb = thumbRt;
+        maxRadius     = radius;
+        deadZone      = deadzone;
+        onMove        = onMoveCallback;
+        onRelease     = onReleaseCallback;
+        onDoubleTap   = onDoubleTapCallback;
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        ProcessInput(eventData);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        ProcessInput(eventData);
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (joystickThumb != null)
+        {
+            joystickThumb.anchoredPosition = Vector2.zero;
+        }
+        onRelease?.Invoke();
+    }
+
+    private void ProcessInput(PointerEventData eventData)
+    {
+        if (joystickBase == null || joystickThumb == null) return;
+
+        // Convertir posición de pantalla directamente al espacio local de joystickBase (donde 0,0 es el centro)
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            joystickBase, eventData.position, eventData.pressEventCamera, out Vector2 localPoint);
+
+        float dist = localPoint.magnitude;
+        Vector2 dir = localPoint / Mathf.Max(dist, 0.001f);
+
+        if (dist > maxRadius) localPoint = dir * maxRadius;
+
+        joystickThumb.anchoredPosition = localPoint;
+
+        float normX = localPoint.x / maxRadius;
+        float normY = localPoint.y / maxRadius;
+
+        if (Mathf.Abs(normX) < deadZone) normX = 0f;
+        if (Mathf.Abs(normY) < deadZone) normY = 0f;
+
+        onMove?.Invoke(new Vector2(normX, normY));
+
+        // Detección de doble toque rápido para dash
+        if (dir != Vector2.zero)
+        {
+            float now = Time.unscaledTime;
+            float dot = Vector2.Dot(dir.normalized, lastDir.normalized);
+            if (dot > 0.7f && (now - lastTapTime) < 0.28f)
+            {
+                onDoubleTap?.Invoke();
+                lastTapTime = -1f;
+            }
+            else
+            {
+                lastTapTime = now;
+                lastDir = dir;
+            }
+        }
     }
 }
 
