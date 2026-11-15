@@ -2,13 +2,14 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// MobileHUD - HUD tactil completo y de alta calidad para Dolondrazo Mobile.
 /// Se instancia automaticamente al arrancar cualquier escena de juego.
 /// Dibuja todo por codigo: joystick virtual, botones de combate con animaciones,
 /// indicador de dash y boton de pausa. Escribe en MobileInputBridge.
-/// Solo activo en dispositivos tactiles (movil/tablet).
+/// 100% compatible con el nuevo Input System Package de Unity.
 /// </summary>
 public class MobileHUD : MonoBehaviour
 {
@@ -19,6 +20,7 @@ public class MobileHUD : MonoBehaviour
     private RectTransform joystickBase;
     private RectTransform joystickThumb;
     private int joystickTouchId = -1;
+    private bool mouseJoystickActive = false;
     private Vector2 joystickCenter;
     private const float JoystickRadius = 90f;
     private const float ThumbDeadZone = 0.12f;
@@ -53,11 +55,6 @@ public class MobileHUD : MonoBehaviour
     private Canvas hudCanvas;
     private RectTransform hudRoot;
 
-    // ---- Touch IDs por boton ----
-    private int punchTouchId = -1;
-    private int kickTouchId  = -1;
-    private int jumpTouchId  = -1;
-
     // ---- Pausa ----
     private PauseManager pauseManager;
 
@@ -71,7 +68,7 @@ public class MobileHUD : MonoBehaviour
         string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
         if (scene == "Pantalla_Inicio" || scene == "MainMenu" || scene == "Menu_Principal") return;
 
-        // Solo en dispositivos con pantalla tactil
+        // Solo en dispositivos con pantalla tactil o editor para pruebas
         if (!IsTouchDevice()) return;
 
         if (Instance != null) return;
@@ -83,13 +80,10 @@ public class MobileHUD : MonoBehaviour
 
     private static bool IsTouchDevice()
     {
-        // En el editor siempre activo para pruebas
-#if UNITY_EDITOR
-        return true;
-#elif UNITY_ANDROID || UNITY_IOS
+#if UNITY_EDITOR || UNITY_ANDROID || UNITY_IOS
         return true;
 #else
-        return Input.touchSupported;
+        return Touchscreen.current != null;
 #endif
     }
 
@@ -157,17 +151,30 @@ public class MobileHUD : MonoBehaviour
         scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 1f; // Prioritar altura (landscape)
+        scaler.matchWidthOrHeight = 1f; // Priorizar altura (landscape)
 
         canvasGo.AddComponent<GraphicRaycaster>();
 
-        // Necesario para que los botones reciban eventos
-        if (FindFirstObjectByType<EventSystem>() == null)
+        // Asegurar EventSystem con InputSystemUIInputModule (compatible con New Input System)
+        EventSystem es = FindFirstObjectByType<EventSystem>();
+        if (es == null)
         {
             GameObject evSys = new GameObject("Mobile_EventSystem");
-            evSys.AddComponent<EventSystem>();
-            evSys.AddComponent<StandaloneInputModule>();
+            es = evSys.AddComponent<EventSystem>();
+            evSys.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
             DontDestroyOnLoad(evSys);
+        }
+        else
+        {
+            var oldModule = es.GetComponent<StandaloneInputModule>();
+            if (oldModule != null)
+            {
+                Destroy(oldModule);
+                if (es.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>() == null)
+                {
+                    es.gameObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+                }
+            }
         }
 
         // Raiz del HUD (pantalla completa)
@@ -223,7 +230,7 @@ public class MobileHUD : MonoBehaviour
         // Icono de flechas en el centro (texto simbolico)
         AddJoystickIcon(baseGo.transform);
 
-        // --- Thumb (el puntito que se mueve) ---
+        // --- Thumb (el circulo interior que se mueve) ---
         GameObject thumbGo = new GameObject("Joy_Thumb", typeof(RectTransform), typeof(Image));
         thumbGo.transform.SetParent(baseGo.transform, false);
         joystickThumb = thumbGo.GetComponent<RectTransform>();
@@ -254,7 +261,6 @@ public class MobileHUD : MonoBehaviour
 
     private void AddJoystickIcon(Transform parent)
     {
-        // Flechas como texto Unicode
         string[] arrows = { "▲", "▼", "◀", "▶" };
         Vector2[] positions = {
             new Vector2(0f,  52f),
@@ -286,15 +292,13 @@ public class MobileHUD : MonoBehaviour
     // ================================================================
     private void BuildActionButtons(Sprite white, Sprite circle)
     {
-        // Layout en el lado derecho de la pantalla
-        // [ SALTAR ]
-        // [ PUNETAZO ]  [ PATADA ]
+        // Layout ergonomico en el lado derecho de la pantalla
         float baseX = -220f;
         float baseY =  180f;
 
         btnPunch = BuildActionButton(circle, white,
             new Vector2(baseX - 95f, baseY - 10f), 95f,
-            "J", "PUNETAZO", ColorPunch, ColorPunchGlow,
+            "J", "GOLPE", ColorPunch, ColorPunchGlow,
             () => { MobileInputBridge.PunchPressedThisFrame = true; MobileInputBridge.AnyButtonTouchedThisFrame = true; },
             ref btnPunchImg);
 
@@ -318,7 +322,6 @@ public class MobileHUD : MonoBehaviour
         System.Action onPress,
         ref Image imgOut)
     {
-        // Raiz del boton (anclada abajo-derecha)
         GameObject root = new GameObject("Btn_" + label, typeof(RectTransform));
         root.transform.SetParent(hudRoot, false);
         RectTransform rootRt = root.GetComponent<RectTransform>();
@@ -389,7 +392,7 @@ public class MobileHUD : MonoBehaviour
         outline.effectColor    = new Color(0f, 0f, 0f, 0.6f);
         outline.effectDistance = new Vector2(1.5f, -1.5f);
 
-        // Etiqueta inferior (nombre del ataque)
+        // Etiqueta inferior
         GameObject labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
         labelGo.transform.SetParent(main.transform, false);
         RectTransform labelRt = labelGo.GetComponent<RectTransform>();
@@ -404,7 +407,7 @@ public class MobileHUD : MonoBehaviour
         labelText.alignment = TextAnchor.MiddleCenter;
         labelText.color     = new Color(1f, 1f, 1f, 0.7f);
 
-        // Trigger tactil (area invisible sobre todo)
+        // Trigger tactil interactivo
         GameObject trigger = new GameObject("TouchTrigger", typeof(RectTransform), typeof(Image), typeof(MobileButtonTrigger));
         trigger.transform.SetParent(root.transform, false);
         RectTransform triggerRt = trigger.GetComponent<RectTransform>();
@@ -412,7 +415,7 @@ public class MobileHUD : MonoBehaviour
         triggerRt.anchorMax = Vector2.one;
         triggerRt.offsetMin = triggerRt.offsetMax = Vector2.zero;
         Image triggerImg = trigger.GetComponent<Image>();
-        triggerImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero recibe raycasts
+        triggerImg.color = new Color(0f, 0f, 0f, 0.001f);
         MobileButtonTrigger mbt = trigger.GetComponent<MobileButtonTrigger>();
         mbt.Setup(onPress, mainImg, normalColor, glowColor);
 
@@ -438,7 +441,6 @@ public class MobileHUD : MonoBehaviour
         bg.color  = new Color(0.08f, 0.1f, 0.2f, 0.85f);
         bg.preserveAspect = true;
 
-        // Icono de pausa ( ❚❚ )
         GameObject iconGo = new GameObject("PauseIcon", typeof(RectTransform), typeof(Text));
         iconGo.transform.SetParent(btnGo.transform, false);
         RectTransform iconRt = iconGo.GetComponent<RectTransform>();
@@ -473,7 +475,7 @@ public class MobileHUD : MonoBehaviour
     }
 
     // ================================================================
-    //  UPDATE - JOYSTICK POR TOUCH RAW
+    //  UPDATE - INPUT NATIVO CON NEW INPUT SYSTEM
     // ================================================================
     private void Update()
     {
@@ -482,30 +484,35 @@ public class MobileHUD : MonoBehaviour
 
     private void HandleJoystickInput()
     {
-        // --- TOUCH REAL (movil) ---
-#if !UNITY_EDITOR
-        if (Input.touchCount > 0)
+        // 1. Deteccion tactil (dispositivos moviles / simulador tactil)
+        var touchScreen = Touchscreen.current;
+        if (touchScreen != null)
         {
-            foreach (Touch touch in Input.touches)
+            var touches = touchScreen.touches;
+            for (int i = 0; i < touches.Count; i++)
             {
-                Vector2 screenPos = touch.position;
-                bool isLeftSide   = screenPos.x < Screen.width * 0.45f;
+                var t = touches[i];
+                if (!t.isInProgress) continue;
 
-                if (touch.phase == TouchPhase.Began && isLeftSide && joystickTouchId == -1)
+                Vector2 screenPos = t.position.ReadValue();
+                bool isLeftSide   = screenPos.x < Screen.width * 0.45f;
+                int touchId       = t.touchId.ReadValue();
+
+                if (t.press.wasPressedThisFrame && isLeftSide && joystickTouchId == -1)
                 {
-                    joystickTouchId = touch.fingerId;
+                    joystickTouchId = touchId;
                     joystickCenter  = ScreenToCanvasPos(screenPos);
                     SetJoystickBasePosition(joystickCenter);
                     CheckDoubleTap(Vector2.zero);
                 }
-                else if (touch.fingerId == joystickTouchId)
+                else if (touchId == joystickTouchId)
                 {
-                    if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
+                    if (t.press.isPressed)
                     {
                         Vector2 canvasPos = ScreenToCanvasPos(screenPos);
                         UpdateJoystickThumb(canvasPos);
                     }
-                    else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                    else
                     {
                         ResetJoystick();
                     }
@@ -516,38 +523,33 @@ public class MobileHUD : MonoBehaviour
         {
             ResetJoystick();
         }
-#else
-        // --- MOUSE (editor) ---
-        HandleMouseJoystick();
-#endif
-    }
 
-#if UNITY_EDITOR
-    private bool mouseJoystickActive = false;
+        // 2. Deteccion con Mouse (para pruebas directamente en el Editor de Unity)
+        var mouse = Mouse.current;
+        if (mouse != null)
+        {
+            Vector2 mouseScreen = mouse.position.ReadValue();
+            bool isLeftSide = mouseScreen.x < Screen.width * 0.45f;
 
-    private void HandleMouseJoystick()
-    {
-        Vector2 mouseScreen = Input.mousePosition;
-        bool isLeftSide = mouseScreen.x < Screen.width * 0.45f;
-
-        if (Input.GetMouseButtonDown(0) && isLeftSide && !mouseJoystickActive)
-        {
-            mouseJoystickActive = true;
-            joystickCenter = ScreenToCanvasPos(mouseScreen);
-            SetJoystickBasePosition(joystickCenter);
-        }
-        else if (Input.GetMouseButton(0) && mouseJoystickActive)
-        {
-            Vector2 canvasPos = ScreenToCanvasPos(mouseScreen);
-            UpdateJoystickThumb(canvasPos);
-        }
-        else if (Input.GetMouseButtonUp(0) && mouseJoystickActive)
-        {
-            mouseJoystickActive = false;
-            ResetJoystick();
+            if (mouse.leftButton.wasPressedThisFrame && isLeftSide && !mouseJoystickActive && joystickTouchId == -1)
+            {
+                mouseJoystickActive = true;
+                joystickCenter = ScreenToCanvasPos(mouseScreen);
+                SetJoystickBasePosition(joystickCenter);
+                CheckDoubleTap(Vector2.zero);
+            }
+            else if (mouse.leftButton.isPressed && mouseJoystickActive)
+            {
+                Vector2 canvasPos = ScreenToCanvasPos(mouseScreen);
+                UpdateJoystickThumb(canvasPos);
+            }
+            else if (mouse.leftButton.wasReleasedThisFrame && mouseJoystickActive)
+            {
+                mouseJoystickActive = false;
+                ResetJoystick();
+            }
         }
     }
-#endif
 
     private void UpdateJoystickThumb(Vector2 canvasPos)
     {
@@ -557,7 +559,10 @@ public class MobileHUD : MonoBehaviour
 
         if (dist > JoystickRadius) delta = dir * JoystickRadius;
 
-        joystickThumb.anchoredPosition = delta;
+        if (joystickThumb != null)
+        {
+            joystickThumb.anchoredPosition = delta;
+        }
 
         // Input normalizado
         float normX = delta.x / JoystickRadius;
@@ -595,17 +600,21 @@ public class MobileHUD : MonoBehaviour
     private void ResetJoystick()
     {
         joystickTouchId = -1;
-        joystickThumb.anchoredPosition = Vector2.zero;
+        mouseJoystickActive = false;
+        if (joystickThumb != null)
+        {
+            joystickThumb.anchoredPosition = Vector2.zero;
+        }
         MobileInputBridge.MoveX = 0f;
         MobileInputBridge.MoveY = 0f;
-#if UNITY_EDITOR
-        mouseJoystickActive = false;
-#endif
     }
 
     private void SetJoystickBasePosition(Vector2 canvasPos)
     {
-        joystickBase.anchoredPosition = canvasPos;
+        if (joystickBase != null)
+        {
+            joystickBase.anchoredPosition = canvasPos;
+        }
     }
 
     // ================================================================
@@ -613,7 +622,7 @@ public class MobileHUD : MonoBehaviour
     // ================================================================
     private Vector2 ScreenToCanvasPos(Vector2 screenPos)
     {
-        if (hudCanvas == null) return screenPos;
+        if (hudCanvas == null || hudRoot == null) return screenPos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             hudRoot, screenPos, hudCanvas.worldCamera, out Vector2 localPoint);
         return localPoint;
