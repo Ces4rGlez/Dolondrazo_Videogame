@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &1000000000000001
 GameObject:
@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 1000000000000007}
   - component: {fileID: 1000000000000008}
   - component: {fileID: 1000000000000009}
+  - component: {fileID: 1000000000000010}
   m_Layer: 7
   m_Name: Enemy_Director
   m_TagString: Untagged
@@ -195,8 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72b335aa5045e384eb7e380e96e5ba3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 300
-  hurtColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  maxHealth: 450
+  hurtColor: {r: 0.37644476, g: 0.6830188, b: 0.30800283, a: 1}
   flashDuration: 0.15
 --- !u!114 &1000000000000008
 MonoBehaviour:
@@ -217,7 +218,7 @@ MonoBehaviour:
   activationDistance: 14
   attackRange: 1.8
   attackCooldown: 1.6
-  punchDamage: 25
+  punchDamage: 35
   knockbackForce: 5.5
   punchSfx: {fileID: 0}
   clonePrefab: {fileID: 1000000000000001}
@@ -228,8 +229,8 @@ MonoBehaviour:
   restoreToPercent: 0.4
   colliderOffset: {x: 0, y: -0.95}
   colliderSize: {x: 1, y: 0.45}
-  bossMusic: {fileID: 0}
-  victoryMusic: {fileID: 0}
+  bossMusic: {fileID: 8300000, guid: 3ccf5443725f428478f6339d4245f345, type: 3}
+  victoryMusic: {fileID: 8300000, guid: 1ca62c248287a004a86e72b5cf9cb16e, type: 3}
 --- !u!114 &1000000000000009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -254,7 +255,7 @@ BoxCollider2D:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000000000000001}
   m_Enabled: 1
-  serializedVersion: 8
+  serializedVersion: 3
   m_Density: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -281,5 +282,14 @@ BoxCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Size: {x: 1.0, y: 1.6}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1.37, y: 2.46}
+    newSize: {x: 1.37, y: 2.46}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1.6}
   m_EdgeRadius: 0

@@ -196,8 +196,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72b335aa5045e384eb7e380e96e5ba3d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 250
-  hurtColor: {r: 1, g: 0.35, b: 0.1, a: 1}
+  maxHealth: 300
+  hurtColor: {r: 0.43670344, g: 0.5471698, b: 0.5350518, a: 1}
   flashDuration: 0.15
 --- !u!114 &1000000000000008
 MonoBehaviour:
@@ -212,7 +212,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SabesLiderAI
   bossName: "EL PREFECTO - L\xCDDER SABES"
-  moveSpeed: 3.8
+  moveSpeed: 4
   stopDistance: 1.5
   activationDistance: 14
   attackRange: 1.9
@@ -221,10 +221,10 @@ MonoBehaviour:
   kickDamage: 42
   punchKnockback: 5.5
   kickKnockback: 7.5
-  punchSfx: {fileID: 0}
-  kickSfx: {fileID: 0}
-  healSfx: {fileID: 0}
-  bossMusic: {fileID: 0}
+  punchSfx: {fileID: 8300000, guid: bd57b795d021da74ba15f266af9cf7e9, type: 3}
+  kickSfx: {fileID: 8300000, guid: bd57b795d021da74ba15f266af9cf7e9, type: 3}
+  healSfx: {fileID: 8300000, guid: 6417d35ab674bd945bad7fc618b50001, type: 3}
+  bossMusic: {fileID: 8300000, guid: 11d62bf2a0ba56745a1c7a974601ba47, type: 3}
   victoryMusic: {fileID: 0}
   healHealthThreshold: 0.4
   healAmount: 70
