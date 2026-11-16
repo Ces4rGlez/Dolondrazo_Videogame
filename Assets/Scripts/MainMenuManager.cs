@@ -1059,7 +1059,7 @@ public class MainMenuManager : MonoBehaviour
 
         if (isUnlocked)
         {
-            MakeArcadeSimpleButton(row.transform, white, new Vector2(272f, -48f), new Vector2(200f, 68f),
+            MakeArcadeSimpleButton(row.transform, white, new Vector2(250f, 0f), new Vector2(200f, 68f),
                                    "JUGAR >>",
                                    new Color(0.15f, 0.65f, 0.35f, 1f),
                                    new Color(0.25f, 0.85f, 0.45f, 1f),
