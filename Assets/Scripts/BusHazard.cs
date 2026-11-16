@@ -239,6 +239,8 @@ public class BusHazard : MonoBehaviour
     /// </summary>
     public void TriggerArrivalSequence(Vector2 parkPosition)
     {
+        StopAllCoroutines();
+        if (warningBannerObj != null) warningBannerObj.SetActive(false);
         gameObject.SetActive(true);
         targetParkPos = parkPosition;
         EnsureUI();

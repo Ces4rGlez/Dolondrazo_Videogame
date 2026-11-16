@@ -257,7 +257,8 @@ public class MobileHUD : MonoBehaviour
 
         // Construir controles
         BuildModernJoystick();
-        BuildModernDiamondCluster();
+        BuildModernActionButtons(); // X (Golpe) y B (Patada) en la derecha (ampliados y ergonómicos)
+        BuildModernJumpButton();     // A (Saltar) en la izquierda arriba del joystick
         BuildModernPauseButton();
 
         // Si ya hay un diálogo activo al construirse el HUD (ej. IntroCutscene), ocultar de inmediato
@@ -364,12 +365,12 @@ public class MobileHUD : MonoBehaviour
     // ================================================================
     private void BuildModernJoystick()
     {
-        // 1. Zona táctil local confinada al cuadrante inferior izquierdo del joystick (hasta 42% ancho y 58% alto)
+        // 1. Zona táctil local confinada al área del joystick (hasta 40% ancho y 40% alto)
         GameObject touchZone = new GameObject("Joy_TouchZone", typeof(RectTransform), typeof(Image));
         touchZone.transform.SetParent(hudRoot, false);
         RectTransform tzRt = touchZone.GetComponent<RectTransform>();
         tzRt.anchorMin = new Vector2(0f, 0f);
-        tzRt.anchorMax = new Vector2(0.42f, 0.58f);
+        tzRt.anchorMax = new Vector2(0.40f, 0.40f);
         tzRt.pivot     = new Vector2(0f, 0f);
         tzRt.offsetMin = tzRt.offsetMax = Vector2.zero;
         Image tzImg = touchZone.GetComponent<Image>();
@@ -504,27 +505,25 @@ public class MobileHUD : MonoBehaviour
     }
 
     // ================================================================
-    //  BOTONES DE ACCIÓN ARCADE (3 BOTONES: GOLPE, PATADA, SALTAR)
-    //  X (Izquierda) = GOLPE / AGARRAR (Cian Eléctrico)
-    //  B (Derecha)   = PATADA / LANZAR (Rojo Carmesí)
-    //  A (Abajo)     = SALTAR (Verde Esmeralda)
+    //  BOTONES DE ACCIÓN ARCADE (X = GOLPE, B = PATADA)
+    //  Ergonomía optimizada con ángulo de arco natural para el pulgar
     // ================================================================
-    private void BuildModernDiamondCluster()
+    private void BuildModernActionButtons()
     {
-        GameObject diamondCluster = new GameObject("Action_Cluster", typeof(RectTransform));
-        diamondCluster.transform.SetParent(hudRoot, false);
-        RectTransform clusterRt = diamondCluster.GetComponent<RectTransform>();
+        GameObject actionCluster = new GameObject("Action_Cluster", typeof(RectTransform));
+        actionCluster.transform.SetParent(hudRoot, false);
+        RectTransform clusterRt = actionCluster.GetComponent<RectTransform>();
         clusterRt.anchorMin = new Vector2(1f, 0f);
         clusterRt.anchorMax = new Vector2(1f, 0f);
         clusterRt.pivot     = new Vector2(0.5f, 0.5f);
-        clusterRt.anchoredPosition = new Vector2(-270f, 260f);
-        clusterRt.sizeDelta = new Vector2(400f, 360f);
+        clusterRt.anchoredPosition = new Vector2(-270f, 250f);
+        clusterRt.sizeDelta = new Vector2(450f, 320f);
 
-        float actionBtnSize = 114f;
+        float actionBtnSize = 144f; // Botones extra grandes y nítidos
 
-        // 1. Botón X (Izquierda) -> GOLPE / AGARRAR (Cian)
-        BuildGamepadButton(diamondCluster.transform,
-            new Vector2(-88f, 32f), actionBtnSize,
+        // 1. Botón X (Izquierda / Inferior) -> GOLPE / AGARRAR / EQUIPAR (Cian Eléctrico)
+        BuildGamepadButton(actionCluster.transform,
+            new Vector2(-102f, -14f), actionBtnSize,
             "X", "GOLPE", ColorX_Cyan,
             onDown: () => {
                 MobileInputBridge.PunchPressedThisFrame = true;
@@ -532,28 +531,45 @@ public class MobileHUD : MonoBehaviour
             },
             onUp: null);
 
-        // 2. Botón B (Derecha) -> PATADA (Rojo)
-        BuildGamepadButton(diamondCluster.transform,
-            new Vector2(88f, 32f), actionBtnSize,
+        // 2. Botón B (Derecha / Superior) -> PATADA / LANZAR (Rojo Carmesí)
+        BuildGamepadButton(actionCluster.transform,
+            new Vector2(102f, 38f), actionBtnSize,
             "B", "PATADA", ColorB_Red,
             onDown: () => {
                 MobileInputBridge.KickPressedThisFrame = true;
                 MobileInputBridge.AnyButtonTouchedThisFrame = true;
             },
             onUp: null);
+    }
 
-        // 3. Botón A (Abajo) -> SALTAR (Verde)
-        BuildGamepadButton(diamondCluster.transform,
-            new Vector2(0f, -80f), actionBtnSize,
+    // ================================================================
+    //  BOTÓN DE SALTO (A = SALTAR) EN LA IZQUIERDA ARRIBA DEL JOYSTICK
+    //  Ubicado a tiro del pulgar izquierdo para saltos fluidos
+    // ================================================================
+    private void BuildModernJumpButton()
+    {
+        float jumpBtnSize = 136f; // Tamaño amplio y cómodo
+
+        // Botón A anclado en la parte inferior izquierda, arriba de la base del joystick
+        GameObject jumpObj = BuildGamepadButton(hudRoot,
+            new Vector2(260f, 505f), jumpBtnSize,
             "A", "SALTAR", ColorA_Green,
             onDown: () => {
                 MobileInputBridge.JumpPressedThisFrame = true;
                 MobileInputBridge.AnyButtonTouchedThisFrame = true;
             },
             onUp: null);
+
+        RectTransform jRt = jumpObj.GetComponent<RectTransform>();
+        jRt.anchorMin = jRt.anchorMax = new Vector2(0f, 0f);
+        jRt.pivot = new Vector2(0.5f, 0.5f);
+        jRt.anchoredPosition = new Vector2(260f, 505f);
+
+        // Traer al frente para prioridad de toque
+        jumpObj.transform.SetAsLastSibling();
     }
 
-    private void BuildGamepadButton(Transform parent, Vector2 pos, float size,
+    private GameObject BuildGamepadButton(Transform parent, Vector2 pos, float size,
         string letter, string actionLabel, Color neonColor,
         System.Action onDown, System.Action onUp)
     {
@@ -614,8 +630,8 @@ public class MobileHUD : MonoBehaviour
         letterRt.anchorMin = new Vector2(0.5f, 0.5f);
         letterRt.anchorMax = new Vector2(0.5f, 0.5f);
         letterRt.pivot     = new Vector2(0.5f, 0.5f);
-        letterRt.anchoredPosition = new Vector2(0f, 10f);
-        letterRt.sizeDelta = new Vector2(size * 0.7f, size * 0.5f);
+        letterRt.anchoredPosition = new Vector2(0f, size * 0.08f);
+        letterRt.sizeDelta = new Vector2(size * 0.75f, size * 0.52f);
         Text letterTxt = letterObj.GetComponent<Text>();
         letterTxt.font      = sansFont;
         letterTxt.text      = letter;
@@ -630,15 +646,15 @@ public class MobileHUD : MonoBehaviour
         letterShadow.effectColor = new Color(0f, 0f, 0f, 0.95f);
         letterShadow.effectDistance = new Vector2(2f, -2f);
 
-        // 6. Etiqueta de acción limpia y elegante (GOLPE, PATADA, SALTAR, CORRER)
+        // 6. Etiqueta de acción limpia y elegante (GOLPE, PATADA, SALTAR)
         GameObject labelObj = new GameObject("Label", typeof(RectTransform), typeof(Text));
         labelObj.transform.SetParent(btnRoot.transform, false);
         RectTransform labelRt = labelObj.GetComponent<RectTransform>();
         labelRt.anchorMin = new Vector2(0.5f, 0.5f);
         labelRt.anchorMax = new Vector2(0.5f, 0.5f);
         labelRt.pivot     = new Vector2(0.5f, 0.5f);
-        labelRt.anchoredPosition = new Vector2(0f, -32f);
-        labelRt.sizeDelta = new Vector2(size * 0.9f, 28f);
+        labelRt.anchoredPosition = new Vector2(0f, -size * 0.26f);
+        labelRt.sizeDelta = new Vector2(size * 0.92f, size * 0.24f);
         Text labelTxt = labelObj.GetComponent<Text>();
         labelTxt.font      = sansFont;
         labelTxt.text      = actionLabel;
@@ -666,6 +682,8 @@ public class MobileHUD : MonoBehaviour
         ModernButtonTrigger mbt = trigger.GetComponent<ModernButtonTrigger>();
         Color glowColor = new Color(neonColor.r, neonColor.g, neonColor.b, 0.40f);
         mbt.Setup(onDown, onUp, bgImg, ColorDarkGlass, glowColor);
+
+        return btnRoot;
     }
 
     // ================================================================

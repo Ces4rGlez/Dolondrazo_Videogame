@@ -2096,7 +2096,7 @@ MonoBehaviour:
     cameraLockX: 8
     cameraMaxX: 8
     triggerBusHazard: 1
-    busHazardDelay: 6
+    busHazardDelay: 3
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}
   - waveTitle: CRUCE DE LA REBSAMEN
@@ -2111,7 +2111,7 @@ MonoBehaviour:
     cameraLockX: 15
     cameraMaxX: 15
     triggerBusHazard: 1
-    busHazardDelay: 6
+    busHazardDelay: 3
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}
   - waveTitle: DUELO CON EL PREFECTO
@@ -2125,8 +2125,8 @@ MonoBehaviour:
       count: 1
     cameraLockX: 20
     cameraMaxX: 20
-    triggerBusHazard: 0
-    busHazardDelay: 8
+    triggerBusHazard: 1
+    busHazardDelay: 3
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}
   - waveTitle: LA MAXIMA AUTORIDAD
@@ -2137,8 +2137,8 @@ MonoBehaviour:
       count: 1
     cameraLockX: 25.5
     cameraMaxX: 25.5
-    triggerBusHazard: 0
-    busHazardDelay: 0
+    triggerBusHazard: 1
+    busHazardDelay: 3
     rewardPickup: {fileID: 0}
     rewardSpawnPoint: {fileID: 0}
   prefabSabes: {fileID: 1000000000000001, guid: 3b41ce92641d469cafb06573fae8639f, type: 3}

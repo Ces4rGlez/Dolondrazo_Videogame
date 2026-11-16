@@ -63,6 +63,7 @@ public class WaveManagerNivel3 : MonoBehaviour
     private bool waveActive = false;
     private List<GameObject> activeEnemies = new List<GameObject>();
     private CameraFollow cameraFollow;
+    private Coroutine busHazardCoroutine;
 
     // UI de Anuncio
     private GameObject waveBannerObj;
@@ -193,10 +194,17 @@ public class WaveManagerNivel3 : MonoBehaviour
             cameraFollow.SetLock(true);
         }
 
-        // Despachar el autobus de forma periodica en esta oleada (solo si wave.triggerBusHazard = true)
-        if (busHazard != null && wave.triggerBusHazard)
+        // Despachar el autobus de forma periodica en TODAS las oleadas de combate
+        if (busHazardCoroutine != null)
         {
-            StartCoroutine(PeriodicBusHazardRoutine(wave.busHazardDelay));
+            StopCoroutine(busHazardCoroutine);
+            busHazardCoroutine = null;
+        }
+
+        if (busHazard != null)
+        {
+            float delay = (wave.busHazardDelay > 0f) ? Mathf.Min(wave.busHazardDelay, 3.2f) : 3.2f;
+            busHazardCoroutine = StartCoroutine(PeriodicBusHazardRoutine(delay));
         }
 
         yield return StartCoroutine(WaitForWaveClearRoutine());
@@ -208,13 +216,20 @@ public class WaveManagerNivel3 : MonoBehaviour
 
         while (waveActive)
         {
-            if (busHazard != null)
+            if (busHazard != null && busHazard.CurrentMode == BusHazard.BusMode.Inactive)
             {
                 busHazard.TriggerPassingHazard();  // usa defaultLaneY configurado en el Inspector del BusHazard
             }
-            // Repetir el cruce del autobus cada 13 segundos mientras la oleada continue activa
-            yield return new WaitForSeconds(13.0f);
+
+            // Repetir el cruce con alta frecuencia (cada 7.5 segundos) mientras la oleada continue activa
+            float elapsed = 0f;
+            while (elapsed < 7.5f && waveActive)
+            {
+                elapsed += 0.5f;
+                yield return new WaitForSeconds(0.5f);
+            }
         }
+        busHazardCoroutine = null;
     }
 
     private IEnumerator WaitForWaveClearRoutine()
@@ -270,6 +285,11 @@ public class WaveManagerNivel3 : MonoBehaviour
     private IEnumerator OnWaveCompletedRoutine(Wave3 completedWave)
     {
         waveActive = false;
+        if (busHazardCoroutine != null)
+        {
+            StopCoroutine(busHazardCoroutine);
+            busHazardCoroutine = null;
+        }
         Debug.Log($"[WaveManagerNivel3] !Oleada '{completedWave.waveTitle}' completada!");
 
         if (completedWave.rewardPickup != null && completedWave.rewardSpawnPoint != null)
