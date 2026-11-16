@@ -9,58 +9,37 @@ using UnityEngine;
 public static class MobileInputBridge
 {
     // ---- Movimiento (Joystick virtual) ----
-    // Valor entre -1 y 1 en cada eje
     public static float MoveX { get; set; } = 0f;
     public static float MoveY { get; set; } = 0f;
 
-    // ---- Acciones (un frame) ----
-    // Estas se activan un frame y se consumen al leerlas
-    private static bool _jumpPressed;
-    private static bool _punchPressed;
-    private static bool _kickPressed;
-    private static bool _pausePressed;
+    // ---- Acciones de un frame (limpiadas en LateUpdate de MobileHUD) ----
+    public static bool JumpPressedThisFrame { get; set; } = false;
+    public static bool PunchPressedThisFrame { get; set; } = false;
+    public static bool KickPressedThisFrame { get; set; } = false;
+    public static bool PausePressedThisFrame { get; set; } = false;
+    public static bool DashPressedThisFrame { get; set; } = false;
 
-    // Dash y Correr continuo (boton Y en movil)
-    private static bool _dashPressed;
+    // ---- Sprint (activado al empujar el joystick hacia afuera) ----
     public static bool RunHeld { get; set; } = false;
-
-    public static bool JumpPressedThisFrame
-    {
-        get { bool v = _jumpPressed; _jumpPressed = false; return v; }
-        set { if (value) _jumpPressed = true; }
-    }
-
-    public static bool PunchPressedThisFrame
-    {
-        get { bool v = _punchPressed; _punchPressed = false; return v; }
-        set { if (value) _punchPressed = true; }
-    }
-
-    public static bool KickPressedThisFrame
-    {
-        get { bool v = _kickPressed; _kickPressed = false; return v; }
-        set { if (value) _kickPressed = true; }
-    }
-
-    public static bool PausePressedThisFrame
-    {
-        get { bool v = _pausePressed; _pausePressed = false; return v; }
-        set { if (value) _pausePressed = true; }
-    }
-
-    public static bool DashPressedThisFrame
-    {
-        get { bool v = _dashPressed; _dashPressed = false; return v; }
-        set { if (value) _dashPressed = true; }
-    }
 
     // ---- Estado continuo para mashing de contusion ----
     public static bool AnyButtonTouchedThisFrame { get; set; } = false;
+
+    public static void ClearFrameInputs()
+    {
+        JumpPressedThisFrame = false;
+        PunchPressedThisFrame = false;
+        KickPressedThisFrame = false;
+        PausePressedThisFrame = false;
+        DashPressedThisFrame = false;
+    }
 
     public static void ResetContinuous()
     {
         MoveX = 0f;
         MoveY = 0f;
+        RunHeld = false;
         AnyButtonTouchedThisFrame = false;
+        ClearFrameInputs();
     }
 }

@@ -87,14 +87,43 @@ public class EquippableWeapon : MonoBehaviour
         promptObj.SetActive(false);
     }
 
+    private bool CheckPlayerProximity()
+    {
+        if (player == null)
+        {
+            player = FindFirstObjectByType<PlayerController>();
+            if (player != null) playerTransform = player.transform;
+        }
+
+        if (playerTransform != null)
+        {
+            float dist = Vector2.Distance(transform.position, playerTransform.position);
+            return dist <= 2.2f;
+        }
+        return false;
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
+    {
+        HandlePlayerTrigger(other);
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        HandlePlayerTrigger(other);
+    }
+
+    private void HandlePlayerTrigger(Collider2D other)
     {
         if (currentState != WeaponState.Grounded) return;
 
-        if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
+        if (other.CompareTag("Player") || other.GetComponentInParent<PlayerController>() != null)
         {
-            playerTransform = other.transform;
-            player = other.GetComponent<PlayerController>();
+            if (player == null)
+            {
+                player = other.GetComponentInParent<PlayerController>();
+                if (player != null) playerTransform = player.transform;
+            }
             playerInRange = true;
             if (promptObj != null)
             {
@@ -108,10 +137,10 @@ public class EquippableWeapon : MonoBehaviour
     {
         if (currentState != WeaponState.Grounded) return;
 
-        if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
+        if (other.CompareTag("Player") || other.GetComponentInParent<PlayerController>() != null)
         {
             playerInRange = false;
-            if (promptObj != null) promptObj.SetActive(false);
+            if (promptObj != null && !CheckPlayerProximity()) promptObj.SetActive(false);
         }
     }
 
@@ -121,15 +150,33 @@ public class EquippableWeapon : MonoBehaviour
         var gamepad = Gamepad.current;
 
         // 1. Recoger arma del suelo
-        if (currentState == WeaponState.Grounded && playerInRange && player != null)
+        if (currentState == WeaponState.Grounded)
         {
-            bool equipPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
-                             || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
-                             || MobileInputBridge.PunchPressedThisFrame;
+            bool isNearby = playerInRange || CheckPlayerProximity();
 
-            if (equipPressed && !player.IsCarryingItem)
+            if (promptObj != null)
             {
-                EquipWeapon();
+                if (isNearby && !promptObj.activeSelf)
+                {
+                    promptText.text = $"[X / E] EQUIPAR {weaponName.ToUpper()}";
+                    promptObj.SetActive(true);
+                }
+                else if (!isNearby && promptObj.activeSelf)
+                {
+                    promptObj.SetActive(false);
+                }
+            }
+
+            if (isNearby && player != null)
+            {
+                bool equipPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
+                                 || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
+                                 || MobileInputBridge.PunchPressedThisFrame;
+
+                if (equipPressed && !player.IsCarryingItem)
+                {
+                    EquipWeapon();
+                }
             }
         }
         // 2. Arma equipada en manos de Fercho

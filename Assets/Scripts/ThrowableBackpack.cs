@@ -78,14 +78,43 @@ public class ThrowableBackpack : MonoBehaviour
         promptObj.SetActive(false);
     }
 
+    private bool CheckPlayerProximity()
+    {
+        if (player == null)
+        {
+            player = FindFirstObjectByType<PlayerController>();
+            if (player != null) playerTransform = player.transform;
+        }
+
+        if (playerTransform != null)
+        {
+            float dist = Vector2.Distance(transform.position, playerTransform.position);
+            return dist <= 2.2f;
+        }
+        return false;
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
+    {
+        HandlePlayerTrigger(other);
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        HandlePlayerTrigger(other);
+    }
+
+    private void HandlePlayerTrigger(Collider2D other)
     {
         if (currentState != BackpackState.Grounded) return;
 
-        if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
+        if (other.CompareTag("Player") || other.GetComponentInParent<PlayerController>() != null)
         {
-            playerTransform = other.transform;
-            player = other.GetComponent<PlayerController>();
+            if (player == null)
+            {
+                player = other.GetComponentInParent<PlayerController>();
+                if (player != null) playerTransform = player.transform;
+            }
             playerInRange = true;
             if (promptObj != null) promptObj.SetActive(true);
         }
@@ -95,10 +124,10 @@ public class ThrowableBackpack : MonoBehaviour
     {
         if (currentState != BackpackState.Grounded) return;
 
-        if (other.CompareTag("Player") || other.GetComponent<PlayerController>() != null)
+        if (other.CompareTag("Player") || other.GetComponentInParent<PlayerController>() != null)
         {
             playerInRange = false;
-            if (promptObj != null) promptObj.SetActive(false);
+            if (promptObj != null && !CheckPlayerProximity()) promptObj.SetActive(false);
         }
     }
 
@@ -108,15 +137,26 @@ public class ThrowableBackpack : MonoBehaviour
         var gamepad = Gamepad.current;
 
         // 1. Recoger mochila del suelo
-        if (currentState == BackpackState.Grounded && playerInRange && player != null)
+        if (currentState == BackpackState.Grounded)
         {
-            bool grabPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
-                            || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
-                            || MobileInputBridge.PunchPressedThisFrame;
+            bool isNearby = playerInRange || CheckPlayerProximity();
 
-            if (grabPressed && !player.IsCarryingItem)
+            if (promptObj != null)
             {
-                PickupBackpack();
+                if (isNearby && !promptObj.activeSelf) promptObj.SetActive(true);
+                else if (!isNearby && promptObj.activeSelf) promptObj.SetActive(false);
+            }
+
+            if (isNearby && player != null)
+            {
+                bool grabPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
+                                || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
+                                || MobileInputBridge.PunchPressedThisFrame;
+
+                if (grabPressed && !player.IsCarryingItem)
+                {
+                    PickupBackpack();
+                }
             }
         }
         // 2. Transportando la mochila

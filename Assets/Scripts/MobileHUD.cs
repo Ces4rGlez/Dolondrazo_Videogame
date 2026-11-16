@@ -94,6 +94,11 @@ public class MobileHUD : MonoBehaviour
         HandleSceneChange(SceneManager.GetActiveScene().name);
     }
 
+    private void LateUpdate()
+    {
+        MobileInputBridge.ClearFrameInputs();
+    }
+
     public void HandleSceneChange(string sceneName)
     {
         bool isGameScene = sceneName == "Nivel_1_Calzada" || sceneName == "Nivel_2_Cinepolis" || sceneName == "Nivel_3_CBTIS75";
@@ -218,15 +223,14 @@ public class MobileHUD : MonoBehaviour
     // ================================================================
     private void BuildModernJoystick()
     {
-        // 1. Zona táctil local confinada al cuadrante inferior izquierdo del joystick
+        // 1. Zona táctil local confinada al cuadrante inferior izquierdo del joystick (hasta 42% ancho y 58% alto)
         GameObject touchZone = new GameObject("Joy_TouchZone", typeof(RectTransform), typeof(Image));
         touchZone.transform.SetParent(hudRoot, false);
         RectTransform tzRt = touchZone.GetComponent<RectTransform>();
         tzRt.anchorMin = new Vector2(0f, 0f);
-        tzRt.anchorMax = new Vector2(0f, 0f);
-        tzRt.pivot     = new Vector2(0.5f, 0.5f);
-        tzRt.anchoredPosition = new Vector2(260f, 260f);
-        tzRt.sizeDelta = new Vector2(380f, 380f);
+        tzRt.anchorMax = new Vector2(0.42f, 0.58f);
+        tzRt.pivot     = new Vector2(0f, 0f);
+        tzRt.offsetMin = tzRt.offsetMax = Vector2.zero;
         Image tzImg = touchZone.GetComponent<Image>();
         tzImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques en su propia área
         tzImg.raycastTarget = true;
@@ -306,17 +310,20 @@ public class MobileHUD : MonoBehaviour
         // Colocar la zona táctil al frente para que ningún gráfico la tape
         touchZone.transform.SetAsLastSibling();
 
-        // Conectar el trigger táctil nativo para captura fluida y directa (exclusivo para caminar/mover)
+        // Conectar el trigger táctil nativo para captura fluida y directa (caminar y sprint con joystick)
         ModernJoystickTrigger joyTrigger = touchZone.AddComponent<ModernJoystickTrigger>();
         joyTrigger.Setup(joystickBase, joystickThumb, JoyRadius, ThumbDeadZone,
             onMove: (norm) => {
                 MobileInputBridge.MoveX = norm.x;
                 MobileInputBridge.MoveY = norm.y;
-                MobileInputBridge.AnyButtonTouchedThisFrame = (Mathf.Abs(norm.x) > 0.1f || Mathf.Abs(norm.y) > 0.1f);
+                float mag = Mathf.Sqrt(norm.x * norm.x + norm.y * norm.y);
+                MobileInputBridge.RunHeld = (mag >= 0.72f);
+                MobileInputBridge.AnyButtonTouchedThisFrame = (mag > 0.1f);
             },
             onRelease: () => {
                 MobileInputBridge.MoveX = 0f;
                 MobileInputBridge.MoveY = 0f;
+                MobileInputBridge.RunHeld = false;
             },
             onDoubleTap: null
         );
@@ -356,39 +363,27 @@ public class MobileHUD : MonoBehaviour
     }
 
     // ================================================================
-    //  DIAMANTE PROFESIONAL DE 4 BOTONES AMPLIADOS (+50% tamaño)
-    //  Disposición exacta estilo Mando / Gamepad moderno:
-    //  Y (Arriba)   = CORRER / DASH (Amarillo Neón)
-    //  X (Izquierda)= GOLPE (Cian Eléctrico)
-    //  B (Derecha)  = PATADA (Rojo Carmesí)
-    //  A (Abajo)    = SALTAR (Verde Esmeralda)
+    //  BOTONES DE ACCIÓN ARCADE (3 BOTONES: GOLPE, PATADA, SALTAR)
+    //  X (Izquierda) = GOLPE / AGARRAR (Cian Eléctrico)
+    //  B (Derecha)   = PATADA / LANZAR (Rojo Carmesí)
+    //  A (Abajo)     = SALTAR (Verde Esmeralda)
     // ================================================================
     private void BuildModernDiamondCluster()
     {
-        GameObject diamondCluster = new GameObject("Diamond_Cluster", typeof(RectTransform));
+        GameObject diamondCluster = new GameObject("Action_Cluster", typeof(RectTransform));
         diamondCluster.transform.SetParent(hudRoot, false);
         RectTransform clusterRt = diamondCluster.GetComponent<RectTransform>();
         clusterRt.anchorMin = new Vector2(1f, 0f);
         clusterRt.anchorMax = new Vector2(1f, 0f);
         clusterRt.pivot     = new Vector2(0.5f, 0.5f);
-        clusterRt.anchoredPosition = new Vector2(-290f, 280f);
-        clusterRt.sizeDelta = new Vector2(460f, 460f);
+        clusterRt.anchoredPosition = new Vector2(-270f, 260f);
+        clusterRt.sizeDelta = new Vector2(400f, 360f);
 
-        // 1. Botón Y (Arriba) -> CORRER (Amarillo)
-        BuildGamepadButton(diamondCluster.transform,
-            new Vector2(0f, DiamondSpread), BtnDiameter,
-            "Y", "CORRER", ColorY_Yellow,
-            onDown: () => {
-                MobileInputBridge.RunHeld = true;
-                MobileInputBridge.AnyButtonTouchedThisFrame = true;
-            },
-            onUp: () => {
-                MobileInputBridge.RunHeld = false;
-            });
+        float actionBtnSize = 114f;
 
-        // 2. Botón X (Izquierda) -> GOLPE (Cian)
+        // 1. Botón X (Izquierda) -> GOLPE / AGARRAR (Cian)
         BuildGamepadButton(diamondCluster.transform,
-            new Vector2(-DiamondSpread, 0f), BtnDiameter,
+            new Vector2(-88f, 32f), actionBtnSize,
             "X", "GOLPE", ColorX_Cyan,
             onDown: () => {
                 MobileInputBridge.PunchPressedThisFrame = true;
@@ -396,9 +391,9 @@ public class MobileHUD : MonoBehaviour
             },
             onUp: null);
 
-        // 3. Botón B (Derecha) -> PATADA (Rojo)
+        // 2. Botón B (Derecha) -> PATADA (Rojo)
         BuildGamepadButton(diamondCluster.transform,
-            new Vector2(DiamondSpread, 0f), BtnDiameter,
+            new Vector2(88f, 32f), actionBtnSize,
             "B", "PATADA", ColorB_Red,
             onDown: () => {
                 MobileInputBridge.KickPressedThisFrame = true;
@@ -406,9 +401,9 @@ public class MobileHUD : MonoBehaviour
             },
             onUp: null);
 
-        // 4. Botón A (Abajo) -> SALTAR (Verde)
+        // 3. Botón A (Abajo) -> SALTAR (Verde)
         BuildGamepadButton(diamondCluster.transform,
-            new Vector2(0f, -DiamondSpread), BtnDiameter,
+            new Vector2(0f, -80f), actionBtnSize,
             "A", "SALTAR", ColorA_Green,
             onDown: () => {
                 MobileInputBridge.JumpPressedThisFrame = true;
@@ -701,9 +696,9 @@ public class MobileHUD : MonoBehaviour
 // ====================================================================
 //  COMPONENTE NATIVO: ModernJoystickTrigger
 //  Maneja la entrada del joystick mediante el EventSystem nativo de Unity.
-//  Garantiza respuesta 100% inmediata al toque y arrastre del pulgar.
+//  Garantiza respuesta 100% inmediata, sprint analógico y failsafe anti-bloqueo.
 // ====================================================================
-public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IEndDragHandler
 {
     private RectTransform joystickBase;
     private RectTransform joystickThumb;
@@ -713,8 +708,8 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
     private System.Action onRelease;
     private System.Action onDoubleTap;
 
-    private float lastTapTime = -1f;
-    private Vector2 lastDir = Vector2.zero;
+    private bool isPressed = false;
+    private int activePointerId = -1;
 
     public void Setup(RectTransform baseRt, RectTransform thumbRt, float radius, float deadzone,
                       System.Action<Vector2> onMove, System.Action onRelease, System.Action onDoubleTap)
@@ -731,17 +726,32 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
     public void OnPointerDown(PointerEventData eventData)
     {
         if (Time.timeScale == 0f || (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive)) return;
+        isPressed = true;
+        activePointerId = eventData.pointerId;
         ProcessInput(eventData);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (Time.timeScale == 0f || (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive)) return;
+        if (!isPressed) return;
         ProcessInput(eventData);
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        ResetJoystick();
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        ResetJoystick();
+    }
+
+    public void ResetJoystick()
+    {
+        isPressed = false;
+        activePointerId = -1;
         if (joystickThumb != null)
         {
             joystickThumb.anchoredPosition = Vector2.zero;
@@ -749,12 +759,59 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
         onRelease?.Invoke();
     }
 
+    private void Update()
+    {
+        if (!isPressed) return;
+
+        // Failsafe 1: Si Time.timeScale es 0 o hay diálogo activo, resetear
+        if (Time.timeScale == 0f || (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive))
+        {
+            ResetJoystick();
+            return;
+        }
+
+        // Failsafe 2: En dispositivo móvil con Touchscreen (hardware)
+        if (UnityEngine.InputSystem.Touchscreen.current != null)
+        {
+            var touches = UnityEngine.InputSystem.Touchscreen.current.touches;
+            bool anyTouchActive = false;
+            for (int i = 0; i < touches.Count; i++)
+            {
+                if (touches[i].isInProgress)
+                {
+                    anyTouchActive = true;
+                    break;
+                }
+            }
+
+            // Si ningún dedo está tocando físicamente la pantalla, resetear
+            if (!anyTouchActive)
+            {
+                ResetJoystick();
+                return;
+            }
+        }
+        // Failsafe 3: En editor o mouse
+        else if (UnityEngine.InputSystem.Mouse.current != null)
+        {
+            if (!UnityEngine.InputSystem.Mouse.current.leftButton.isPressed)
+            {
+                ResetJoystick();
+                return;
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        ResetJoystick();
+    }
+
     private void ProcessInput(PointerEventData eventData)
     {
         if (joystickBase == null || joystickThumb == null) return;
 
         // Convertir posición de pantalla directamente al espacio local de joystickBase (donde 0,0 es el centro)
-        // En Canvas ScreenSpaceOverlay, pasar null para la cámara garantiza cálculo exacto en coordenadas de pantalla.
         Camera eventCam = (eventData.pressEventCamera != null && eventData.pressEventCamera.isActiveAndEnabled) ? eventData.pressEventCamera : null;
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(joystickBase, eventData.position, eventCam, out Vector2 localPoint))
         {
