@@ -68,7 +68,7 @@ public class ThrowableBackpack : MonoBehaviour
         promptObj.transform.localPosition = new Vector3(0f, 0.9f, 0f);
 
         promptText = promptObj.AddComponent<TextMesh>();
-        promptText.text = "[E] MOCHILA";
+        promptText.text = "[X / E] MOCHILA";
         promptText.fontSize = 28;
         promptText.characterSize = 0.05f;
         promptText.anchor = TextAnchor.MiddleCenter;
@@ -111,7 +111,8 @@ public class ThrowableBackpack : MonoBehaviour
         if (currentState == BackpackState.Grounded && playerInRange && player != null)
         {
             bool grabPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
-                            || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame);
+                            || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
+                            || MobileInputBridge.PunchPressedThisFrame;
 
             if (grabPressed && !player.IsCarryingItem)
             {
@@ -136,7 +137,9 @@ public class ThrowableBackpack : MonoBehaviour
             if (Time.time >= throwCooldown)
             {
                 bool throwPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame || keyboard.kKey.wasPressedThisFrame))
-                                 || (gamepad != null && (gamepad.buttonWest.wasPressedThisFrame || gamepad.buttonNorth.wasPressedThisFrame));
+                                 || (gamepad != null && (gamepad.buttonWest.wasPressedThisFrame || gamepad.buttonNorth.wasPressedThisFrame))
+                                 || MobileInputBridge.PunchPressedThisFrame
+                                 || MobileInputBridge.KickPressedThisFrame;
 
                 if (throwPressed)
                 {

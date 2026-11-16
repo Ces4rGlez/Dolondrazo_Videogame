@@ -77,7 +77,7 @@ public class EquippableWeapon : MonoBehaviour
         promptObj.transform.localPosition = new Vector3(0f, 0.85f, 0f);
 
         promptText = promptObj.AddComponent<TextMesh>();
-        promptText.text = $"[E] {weaponName.ToUpper()}";
+        promptText.text = $"[X / E] {weaponName.ToUpper()}";
         promptText.fontSize = 28;
         promptText.characterSize = 0.05f;
         promptText.anchor = TextAnchor.MiddleCenter;
@@ -98,7 +98,7 @@ public class EquippableWeapon : MonoBehaviour
             playerInRange = true;
             if (promptObj != null)
             {
-                promptText.text = $"[E] EQUIPAR {weaponName.ToUpper()}";
+                promptText.text = $"[X / E] EQUIPAR {weaponName.ToUpper()}";
                 promptObj.SetActive(true);
             }
         }
@@ -124,7 +124,8 @@ public class EquippableWeapon : MonoBehaviour
         if (currentState == WeaponState.Grounded && playerInRange && player != null)
         {
             bool equipPressed = (keyboard != null && (keyboard.eKey.wasPressedThisFrame || keyboard.jKey.wasPressedThisFrame))
-                             || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame);
+                             || (gamepad != null && gamepad.buttonWest.wasPressedThisFrame)
+                             || MobileInputBridge.PunchPressedThisFrame;
 
             if (equipPressed && !player.IsCarryingItem)
             {
@@ -160,9 +161,11 @@ public class EquippableWeapon : MonoBehaviour
                 }
             }
 
-            // Escuchar ataque de Fercho (J = golpe, K = patada)
+            // Escuchar ataque de Fercho (J = golpe, K = patada, X = Golpe móvil, B = Patada móvil)
             bool attackPressed = (keyboard != null && (keyboard.jKey.wasPressedThisFrame || keyboard.kKey.wasPressedThisFrame))
-                              || (gamepad != null && (gamepad.buttonWest.wasPressedThisFrame || gamepad.buttonNorth.wasPressedThisFrame));
+                              || (gamepad != null && (gamepad.buttonWest.wasPressedThisFrame || gamepad.buttonNorth.wasPressedThisFrame))
+                              || MobileInputBridge.PunchPressedThisFrame
+                              || MobileInputBridge.KickPressedThisFrame;
 
             if (attackPressed && !isSwinging && Time.time >= nextAttackTime)
             {

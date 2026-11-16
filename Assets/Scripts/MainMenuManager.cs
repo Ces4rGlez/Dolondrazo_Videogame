@@ -48,6 +48,13 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start()
     {
+        // 0. Asegurar fondo oscuro en camara para evitar parpadeos azules
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            mainCam.backgroundColor = new Color(0.04f, 0.05f, 0.09f, 1f);
+        }
+
         // 1. Asegurar AudioManager persistente en su propio GameObject independiente
         if (AudioManager.Instance == null)
         {
@@ -286,13 +293,20 @@ public class MainMenuManager : MonoBehaviour
 
     private void BuildMainMenuUI()
     {
-        Canvas canvas = FindFirstObjectByType<Canvas>();
+        Canvas canvas = null;
+        GameObject canvasObj = GameObject.Find("Menu_Canvas");
+        if (canvasObj != null && canvasObj.scene == gameObject.scene)
+        {
+            canvas = canvasObj.GetComponent<Canvas>();
+        }
+
         if (canvas == null)
         {
-            GameObject canvasObj = new GameObject("Menu_Canvas");
+            canvasObj = new GameObject("Menu_Canvas");
+            SceneManager.MoveGameObjectToScene(canvasObj, gameObject.scene);
             canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 10;
+            canvas.sortingOrder = 50;
 
             CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -632,7 +646,7 @@ public class MainMenuManager : MonoBehaviour
         RectTransform rt = optionsModal.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(820f, 560f);
+        rt.anchoredPosition = new Vector2(0f, 20f); rt.sizeDelta = new Vector2(820f, 490f);
 
         Image bg = optionsModal.GetComponent<Image>();
         bg.sprite = white; bg.color = new Color(0.04f, 0.05f, 0.12f, 0.98f);
@@ -643,12 +657,12 @@ public class MainMenuManager : MonoBehaviour
 
         MakeText(optionsModal.transform, "AJUSTES DE AUDIO Y PANTALLA",
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-                 new Vector2(0f, -32f), new Vector2(0f, 40f),
-                 26, FontStyle.Bold, TextAnchor.MiddleCenter,
+                 new Vector2(0f, -28f), new Vector2(0f, 38f),
+                 25, FontStyle.Bold, TextAnchor.MiddleCenter,
                  new Color(1f, 0.88f, 0.2f, 1f), "Modal_Title");
 
-        float sY = -120f;
-        float sGap = 88f;
+        float sY = -85f;
+        float sGap = 76f;
 
         CreateOptionSlider(optionsModal.transform, white, "VOLUMEN GENERAL", sY,
                            AudioManager.Instance != null ? AudioManager.Instance.MasterVolume : 1f,
@@ -669,7 +683,7 @@ public class MainMenuManager : MonoBehaviour
         rtFs.anchorMin = new Vector2(0.5f, 1f); rtFs.anchorMax = new Vector2(0.5f, 1f);
         rtFs.pivot = new Vector2(0.5f, 1f);
         rtFs.anchoredPosition = new Vector2(0f, sY - sGap * 3);
-        rtFs.sizeDelta = new Vector2(700f, 50f);
+        rtFs.sizeDelta = new Vector2(700f, 46f);
 
         MakeText(fsObj.transform, "PANTALLA COMPLETA",
                  new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
@@ -686,7 +700,7 @@ public class MainMenuManager : MonoBehaviour
                                    PlayClick();
                                });
 
-        MakeArcadeSimpleButton(optionsModal.transform, white, new Vector2(0f, -490f), new Vector2(260f, 56f),
+        MakeArcadeSimpleButton(optionsModal.transform, white, new Vector2(0f, -405f), new Vector2(260f, 52f),
                                "<< GUARDAR Y SALIR",
                                new Color(0.12f, 0.5f, 0.25f, 1f),
                                new Color(0.2f, 0.75f, 0.38f, 1f),
@@ -702,7 +716,7 @@ public class MainMenuManager : MonoBehaviour
         RectTransform rt = storyModal.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(900f, 620f);
+        rt.anchoredPosition = new Vector2(0f, 20f); rt.sizeDelta = new Vector2(900f, 520f);
 
         Image bg = storyModal.GetComponent<Image>();
         bg.sprite = white; bg.color = new Color(0.04f, 0.05f, 0.12f, 0.98f);
@@ -713,19 +727,19 @@ public class MainMenuManager : MonoBehaviour
 
         MakeText(storyModal.transform, "M I S I O N   Y   C O N T R O L E S",
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-                 new Vector2(0f, -32f), new Vector2(0f, 40f),
-                 26, FontStyle.Bold, TextAnchor.MiddleCenter,
+                 new Vector2(0f, -28f), new Vector2(0f, 38f),
+                 25, FontStyle.Bold, TextAnchor.MiddleCenter,
                  new Color(1f, 0.88f, 0.2f, 1f), "Story_Title");
 
         string synopsis = "Eres Fercho, estudiante del CBTis 75 en Dolores Hidalgo, Gto. Hoy es el ultimo dia " +
                           "para entregar tu proyecto escolar final antes de las 2:00 PM. El transporte publico " +
                           "no llego, tu celular se quedo sin bateria y las calles han sido bloqueadas por bandas " +
-                          "rivales del CECyTE. Tu unica opcion: Â¡cruzar la ciudad a pie y abrirte paso a golpes!";
+                          "rivales del CECyTE. Tu unica opcion: ¡cruzar la ciudad a pie y abrirte paso a golpes!";
 
         MakeText(storyModal.transform, synopsis,
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-                 new Vector2(0f, -90f), new Vector2(-90f, 105f),
-                 18, FontStyle.Normal, TextAnchor.UpperLeft,
+                 new Vector2(0f, -80f), new Vector2(-90f, 85f),
+                 17, FontStyle.Normal, TextAnchor.UpperLeft,
                  new Color(0.92f, 0.95f, 1f, 1f), "Story_Synopsis");
 
         // Tarjeta de Controles
@@ -734,8 +748,8 @@ public class MainMenuManager : MonoBehaviour
         RectTransform rtCc = controlsCard.GetComponent<RectTransform>();
         rtCc.anchorMin = new Vector2(0.5f, 0.5f); rtCc.anchorMax = new Vector2(0.5f, 0.5f);
         rtCc.pivot = new Vector2(0.5f, 0.5f);
-        rtCc.anchoredPosition = new Vector2(0f, -70f);
-        rtCc.sizeDelta = new Vector2(810f, 210f);
+        rtCc.anchoredPosition = new Vector2(0f, -65f);
+        rtCc.sizeDelta = new Vector2(810f, 215f);
         Image ccBg = controlsCard.GetComponent<Image>();
         ccBg.sprite = white; ccBg.color = new Color(0.08f, 0.1f, 0.18f, 0.95f);
 
@@ -743,20 +757,21 @@ public class MainMenuManager : MonoBehaviour
                 new Vector2(0f, 0.5f), Vector2.zero, new Vector2(5f, 0f),
                 new Color(0.35f, 0.88f, 1f, 1f), "ControlsLeftCyan");
 
-        string controlsText = "MANDOS DEL JUGADOR (TECLADO):\n\n" +
-                              "â€¢ [A] / [D] o [Flechas]     : Mover a Fercho por la calle\n" +
-                              "â€¢ [Z] o [J] o [Click Izq]   : Combo de Golpes (Punch & Kick)\n" +
-                              "â€¢ [Espacio]                 : Saltar / Esquivar obstaculos\n" +
-                              "â€¢ [Esc] o [P]               : Pausar partida y Menu rapido\n" +
-                              "â€¢ Rompe las CAJAS de madera con golpes para conseguir comida y recargar salud.";
+        string controlsText = "MANDOS DEL JUGADOR:\n\n" +
+                              "• [Joystick] / [WASD]       : Mover a Fercho por la calle\n" +
+                              "• [Boton X] / [J]           : Combo de Golpes / Recoger Objetos (Mochilas/Armas)\n" +
+                              "• [Boton B] / [K]           : Patada devastadora / Lanzar Objetos\n" +
+                              "• [Boton A] / [Espacio]     : Saltar / Esquivar obstaculos\n" +
+                              "• [Boton Y] / [Shift]       : Correr a toda velocidad\n" +
+                              "• Rompe las CAJAS de madera a golpes para conseguir comida y salud.";
 
         MakeText(controlsCard.transform, controlsText,
                  Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
                  new Vector2(25f, 0f), new Vector2(-25f, 0f),
-                 18, FontStyle.Bold, TextAnchor.MiddleLeft,
+                 17, FontStyle.Bold, TextAnchor.MiddleLeft,
                  new Color(0.85f, 0.95f, 1f, 1f), "Controls_Details");
 
-        MakeArcadeSimpleButton(storyModal.transform, white, new Vector2(0f, -540f), new Vector2(260f, 56f),
+        MakeArcadeSimpleButton(storyModal.transform, white, new Vector2(0f, -435f), new Vector2(260f, 52f),
                                "<< ENTENDIDO",
                                new Color(0.35f, 0.15f, 0.55f, 1f),
                                new Color(0.55f, 0.25f, 0.85f, 1f),
@@ -950,7 +965,7 @@ public class MainMenuManager : MonoBehaviour
         RectTransform rt = levelSelectModal.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = Vector2.zero; rt.sizeDelta = new Vector2(850f, 580f);
+        rt.anchoredPosition = new Vector2(0f, 20f); rt.sizeDelta = new Vector2(860f, 480f);
 
         Image bg = levelSelectModal.GetComponent<Image>();
         bg.sprite = white; bg.color = new Color(0.04f, 0.05f, 0.12f, 0.98f);
@@ -961,46 +976,46 @@ public class MainMenuManager : MonoBehaviour
 
         MakeText(levelSelectModal.transform, "S E L E C C I O N A R   N I V E L",
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-                 new Vector2(0f, -32f), new Vector2(0f, 40f),
-                 26, FontStyle.Bold, TextAnchor.MiddleCenter,
+                 new Vector2(0f, -28f), new Vector2(0f, 38f),
+                 25, FontStyle.Bold, TextAnchor.MiddleCenter,
                  new Color(1f, 0.88f, 0.2f, 1f), "Modal_Level_Title");
 
         int maxUnlocked = GameSaveManager.GetMaxUnlockedLevel();
-        float startY = -120f;
-        float gapY = 100f;
+        float startY = -85f;
+        float gapY = 88f;
 
         // Nivel 1
         MakeLevelCard(levelSelectModal.transform, white, 1, "NIVEL 1: CALZADA DE LOS HEROES",
-                      "Camino a Dolores Hidalgo â€¢ Desafia a los estudiantes del CECyTE",
+                      "Camino a Dolores Hidalgo • Desafia a los estudiantes del CECyTE",
                       startY, true, () => {
                           Time.timeScale = 1f;
-                          LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "Â¡Llega al CBTis 75 a tiempo!");
+                          LevelTransitionLoader.LoadLevel("Nivel_1_Calzada", "NIVEL 1: CALZADA DE LOS HEROES", "¡Llega al CBTis 75 a tiempo!");
                       });
 
         // Nivel 2
         MakeLevelCard(levelSelectModal.transform, white, 2, "NIVEL 2: EL CENTRO Y CINEPOLIS",
-                      "Zona Centro â€¢ Enfrenta a las alumnas del Rebsamen y la Directora",
+                      "Zona Centro • Enfrenta a las alumnas del Rebsamen y la Directora",
                       startY - gapY, maxUnlocked >= 2, () => {
                           Time.timeScale = 1f;
-                          LevelTransitionLoader.LoadLevel("Nivel_2_Cinepolis", "NIVEL 2: EL CENTRO Y CINEPOLIS", "Â¡Cuidado con los mochilazos!");
+                          LevelTransitionLoader.LoadLevel("Nivel_2_Cinepolis", "NIVEL 2: EL CENTRO Y CINEPOLIS", "¡Cuidado con los mochilazos!");
                       });
 
         // Nivel 3
         MakeLevelCard(levelSelectModal.transform, white, 3, "NIVEL 3: CBTIS 75 (BATALLA FINAL)",
-                      "Avenida CBTis 75 â€¢ Vence al Prefecto del SABES y al Lic. Mondragon",
+                      "Avenida CBTis 75 • Vence al Prefecto del SABES y al Lic. Mondragon",
                       startY - gapY * 2, maxUnlocked >= 3, () => {
                           Time.timeScale = 1f;
-                          LevelTransitionLoader.LoadLevel("Nivel_3_CBTIS75", "NIVEL 3: CBTIS 75", "Â¡Derrota al Director antes de que pase el camion!");
+                          LevelTransitionLoader.LoadLevel("Nivel_3_CBTIS75", "NIVEL 3: CBTIS 75", "¡Derrota al Director antes de que pase el camion!");
                       });
 
-        // Botones Inferiores: Nueva Aventura y Regresar
-        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(-155f, -500f), new Vector2(260f, 54f),
+        // Botones Inferiores: Nueva Aventura y Regresar (posicionados mas arriba a -368f)
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(-155f, -368f), new Vector2(260f, 52f),
                                "+ NUEVA AVENTURA",
                                new Color(0.12f, 0.45f, 0.22f, 1f),
                                new Color(0.2f, 0.75f, 0.35f, 1f),
                                "Btn_NewGameModal", StartNewAdventure);
 
-        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(155f, -500f), new Vector2(260f, 54f),
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(155f, -368f), new Vector2(260f, 52f),
                                "<< REGRESAR",
                                new Color(0.25f, 0.28f, 0.38f, 1f),
                                new Color(0.4f, 0.45f, 0.6f, 1f),
@@ -1017,7 +1032,7 @@ public class MainMenuManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 1f); rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = new Vector2(0f, yPos);
-        rt.sizeDelta = new Vector2(740f, 82f);
+        rt.sizeDelta = new Vector2(740f, 76f);
 
         Image img = row.GetComponent<Image>();
         img.sprite = white;
@@ -1044,7 +1059,7 @@ public class MainMenuManager : MonoBehaviour
 
         if (isUnlocked)
         {
-            MakeArcadeSimpleButton(row.transform, white, new Vector2(270f, -41f), new Vector2(160f, 48f),
+            MakeArcadeSimpleButton(row.transform, white, new Vector2(270f, -38f), new Vector2(160f, 44f),
                                    "JUGAR >>",
                                    new Color(0.15f, 0.65f, 0.35f, 1f),
                                    new Color(0.25f, 0.85f, 0.45f, 1f),

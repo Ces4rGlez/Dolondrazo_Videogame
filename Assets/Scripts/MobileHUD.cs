@@ -26,7 +26,6 @@ public class MobileHUD : MonoBehaviour
     // ---- Joystick State ----
     private RectTransform joystickBase;
     private RectTransform joystickThumb;
-    private bool isManualRunHeld = false;
 
     // ---- Paleta de Neón y Obsidiana Estilo Gamepad Moderno ----
     // X = Cian Eléctrico (Golpe / Puñetazo)
@@ -101,7 +100,11 @@ public class MobileHUD : MonoBehaviour
 
         if (!isGameScene)
         {
-            if (hudCanvas != null) hudCanvas.gameObject.SetActive(false);
+            if (hudCanvas != null)
+            {
+                Destroy(hudCanvas.gameObject);
+                hudCanvas = null;
+            }
             return;
         }
 
@@ -112,6 +115,8 @@ public class MobileHUD : MonoBehaviour
     {
         yield return null; // Esperar a que la escena se estabilice
 
+        FixLevel2BackgroundGaps(SceneManager.GetActiveScene().name);
+
         if (hudCanvas != null)
         {
             Destroy(hudCanvas.gameObject);
@@ -121,6 +126,36 @@ public class MobileHUD : MonoBehaviour
         BuildFullModernHUD();
     }
 
+    private void FixLevel2BackgroundGaps(string sceneName)
+    {
+        if (sceneName == "Nivel_2_Cinepolis")
+        {
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                mainCam.backgroundColor = new Color(0.05f, 0.06f, 0.1f, 1f);
+                if (mainCam.transform.position.x < -5f)
+                {
+                    mainCam.transform.position = new Vector3(0f, 0f, -10f);
+                }
+            }
+
+            GameObject bg = GameObject.Find("Fondo_Cinepolis");
+            if (bg != null && GameObject.Find("Fondo_Cinepolis_Left") == null)
+            {
+                SpriteRenderer sr = bg.GetComponent<SpriteRenderer>();
+                float width = 47.17f;
+                if (sr != null && sr.sprite != null)
+                {
+                    width = (sr.sprite.rect.width / sr.sprite.pixelsPerUnit) * bg.transform.localScale.x;
+                }
+
+                GameObject leftExt = Instantiate(bg, bg.transform.position - new Vector3(width - 0.05f, 0f, 0f), bg.transform.rotation);
+                leftExt.name = "Fondo_Cinepolis_Left";
+            }
+        }
+    }
+
     // ================================================================
     //  CONSTRUCCIÓN DEL HUD PROFESIONAL
     // ================================================================
@@ -128,12 +163,12 @@ public class MobileHUD : MonoBehaviour
     {
         EnsureSpritesCached();
 
-        // 1. Canvas ScreenSpaceOverlay con sorting alto
+        // 1. Canvas ScreenSpaceOverlay con sorting 90 (debajo de menus/dialogos que estan en sorting 100)
         GameObject canvasGo = new GameObject("Modern_Mobile_HUD_Canvas");
         DontDestroyOnLoad(canvasGo);
         hudCanvas = canvasGo.AddComponent<Canvas>();
         hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        hudCanvas.sortingOrder = 450; // Siempre por encima del juego
+        hudCanvas.sortingOrder = 90; // Permite que menus, dialogos y avances en 100 reciban clicks con total prioridad
 
         CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -183,15 +218,17 @@ public class MobileHUD : MonoBehaviour
     // ================================================================
     private void BuildModernJoystick()
     {
-        // 1. Zona táctil completa del lado izquierdo (para capturar cualquier toque del pulgar)
+        // 1. Zona táctil local confinada al cuadrante inferior izquierdo del joystick
         GameObject touchZone = new GameObject("Joy_TouchZone", typeof(RectTransform), typeof(Image));
         touchZone.transform.SetParent(hudRoot, false);
         RectTransform tzRt = touchZone.GetComponent<RectTransform>();
         tzRt.anchorMin = new Vector2(0f, 0f);
-        tzRt.anchorMax = new Vector2(0.48f, 0.85f);
-        tzRt.offsetMin = tzRt.offsetMax = Vector2.zero;
+        tzRt.anchorMax = new Vector2(0f, 0f);
+        tzRt.pivot     = new Vector2(0.5f, 0.5f);
+        tzRt.anchoredPosition = new Vector2(260f, 260f);
+        tzRt.sizeDelta = new Vector2(380f, 380f);
         Image tzImg = touchZone.GetComponent<Image>();
-        tzImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques al 100%
+        tzImg.color = new Color(0f, 0f, 0f, 0.001f); // Invisible pero intercepta toques en su propia área
         tzImg.raycastTarget = true;
 
         // 2. Base del Joystick anclada en la esquina inferior izquierda
@@ -269,35 +306,19 @@ public class MobileHUD : MonoBehaviour
         // Colocar la zona táctil al frente para que ningún gráfico la tape
         touchZone.transform.SetAsLastSibling();
 
-        // Conectar el trigger táctil nativo para captura fluida y directa
+        // Conectar el trigger táctil nativo para captura fluida y directa (exclusivo para caminar/mover)
         ModernJoystickTrigger joyTrigger = touchZone.AddComponent<ModernJoystickTrigger>();
         joyTrigger.Setup(joystickBase, joystickThumb, JoyRadius, ThumbDeadZone,
             onMove: (norm) => {
                 MobileInputBridge.MoveX = norm.x;
                 MobileInputBridge.MoveY = norm.y;
                 MobileInputBridge.AnyButtonTouchedThisFrame = (Mathf.Abs(norm.x) > 0.1f || Mathf.Abs(norm.y) > 0.1f);
-
-                // Auto-Sprint en móvil al empujar el stick a fondo (>= 70%)
-                if (norm.magnitude >= 0.70f)
-                {
-                    MobileInputBridge.RunHeld = true;
-                }
-                else if (!isManualRunHeld)
-                {
-                    MobileInputBridge.RunHeld = false;
-                }
             },
             onRelease: () => {
                 MobileInputBridge.MoveX = 0f;
                 MobileInputBridge.MoveY = 0f;
-                if (!isManualRunHeld)
-                {
-                    MobileInputBridge.RunHeld = false;
-                }
             },
-            onDoubleTap: () => {
-                MobileInputBridge.DashPressedThisFrame = true;
-            }
+            onDoubleTap: null
         );
     }
 
@@ -353,23 +374,16 @@ public class MobileHUD : MonoBehaviour
         clusterRt.anchoredPosition = new Vector2(-290f, 280f);
         clusterRt.sizeDelta = new Vector2(460f, 460f);
 
-        // 1. Botón Y (Arriba) -> CORRER / DASH (Amarillo)
+        // 1. Botón Y (Arriba) -> CORRER (Amarillo)
         BuildGamepadButton(diamondCluster.transform,
             new Vector2(0f, DiamondSpread), BtnDiameter,
             "Y", "CORRER", ColorY_Yellow,
             onDown: () => {
-                isManualRunHeld = true;
                 MobileInputBridge.RunHeld = true;
-                MobileInputBridge.DashPressedThisFrame = true;
                 MobileInputBridge.AnyButtonTouchedThisFrame = true;
             },
             onUp: () => {
-                isManualRunHeld = false;
-                float curMag = Mathf.Sqrt(MobileInputBridge.MoveX * MobileInputBridge.MoveX + MobileInputBridge.MoveY * MobileInputBridge.MoveY);
-                if (curMag < 0.70f)
-                {
-                    MobileInputBridge.RunHeld = false;
-                }
+                MobileInputBridge.RunHeld = false;
             });
 
         // 2. Botón X (Izquierda) -> GOLPE (Cian)
@@ -716,11 +730,13 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (Time.timeScale == 0f || (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive)) return;
         ProcessInput(eventData);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (Time.timeScale == 0f || (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive)) return;
         ProcessInput(eventData);
     }
 
@@ -759,23 +775,6 @@ public class ModernJoystickTrigger : MonoBehaviour, IPointerDownHandler, IDragHa
         if (Mathf.Abs(normY) < deadZone) normY = 0f;
 
         onMove?.Invoke(new Vector2(normX, normY));
-
-        // Detección de doble toque rápido para dash
-        if (dir != Vector2.zero)
-        {
-            float now = Time.unscaledTime;
-            float dot = Vector2.Dot(dir.normalized, lastDir.normalized);
-            if (dot > 0.7f && (now - lastTapTime) < 0.28f)
-            {
-                onDoubleTap?.Invoke();
-                lastTapTime = -1f;
-            }
-            else
-            {
-                lastTapTime = now;
-                lastDir = dir;
-            }
-        }
     }
 }
 
@@ -803,6 +802,7 @@ public class ModernButtonTrigger : MonoBehaviour, IPointerDownHandler, IPointerU
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (Time.timeScale == 0f || (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive)) return;
         onDownAction?.Invoke();
 
         if (animRoutine != null) StopCoroutine(animRoutine);

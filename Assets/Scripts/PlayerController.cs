@@ -35,7 +35,6 @@ public class PlayerController : MonoBehaviour
     private float groundY;
     public bool IsCarryingItem { get; set; } = false;         // Posicion Y base del personaje
     private Coroutine jumpCoroutine;
-    private float dashBoostTimer = 0f;
     private bool isRunActive = false;
 
     [Header("Estado de Contusion")]
@@ -139,30 +138,15 @@ public class PlayerController : MonoBehaviour
             moveInput = Vector2.zero;
         }
 
-        // --- 2. Impulso Dash (boton Y en movil o doble tap) ---
-        if (MobileInputBridge.DashPressedThisFrame)
-        {
-            dashBoostTimer = 0.55f;
-            // Si el jugador no se esta moviendo con el joystick al presionar Dash/Y, darle direccion hacia donde mira
-            if (moveInput.sqrMagnitude < 0.1f)
-            {
-                moveInput = isFacingRight ? Vector2.right : Vector2.left;
-            }
-        }
-        if (dashBoostTimer > 0f)
-        {
-            dashBoostTimer -= Time.deltaTime;
-        }
-
-        // --- 3. Correr (mantener Shift / L1 / joystick a fondo / boton Y / dash boost) ---
+        // --- 2. Correr (EXCLUSIVO al mantener Shift en teclado, L1 en gamepad o boton Y en movil) ---
         bool keyboardRun = (keyboard != null && (keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed));
         bool gamepadRun  = (gamepad != null && gamepad.leftShoulder.isPressed);
         bool mobileRun   = MobileInputBridge.RunHeld;
 
-        isRunActive = (keyboardRun || gamepadRun || mobileRun || dashBoostTimer > 0f) && moveInput.sqrMagnitude > 0.1f;
+        isRunActive = (keyboardRun || gamepadRun || mobileRun) && moveInput.sqrMagnitude > 0.1f;
         float currentSpeed = isRunActive ? runSpeed : walkSpeed;
 
-        // --- 4. Animator: Speed, IsRunning ---
+        // --- 3. Animator: Speed, IsRunning ---
         if (animator != null)
         {
             float animSpeed = moveInput.sqrMagnitude * currentSpeed;

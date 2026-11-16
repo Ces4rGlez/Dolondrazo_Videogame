@@ -6,81 +6,51 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// MainMenuSceneCreator - Script de editor que crea y registra automaticamente
-/// la escena MainMenu.unity al compilar, asegurando que sea la Escena 0 en Build Settings.
+/// MainMenuSceneCreator - Script de editor que asegura que Pantalla_Inicio.unity
+/// este correctamente registrada como Escena 0 en Build Settings.
 /// </summary>
 [InitializeOnLoad]
 public static class MainMenuSceneCreator
 {
     static MainMenuSceneCreator()
     {
-        EditorApplication.delayCall += EnsureMainMenuSetup;
+        EditorApplication.delayCall += EnsurePantallaInicioSetup;
     }
 
-    [MenuItem("Dolondrazo/Regenerar Escena MainMenu")]
-    public static void EnsureMainMenuSetup()
+    [MenuItem("Dolondrazo/Verificar Escena Pantalla_Inicio")]
+    public static void EnsurePantallaInicioSetup()
     {
-        string scenePath = "Assets/Scenes/MainMenu.unity";
+        string scenePath = "Assets/Scenes/Pantalla_Inicio.unity";
 
-        // 1. Crear la escena si no existe
-        if (!File.Exists(scenePath))
-        {
-            Scene newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-
-            // Crear el controlador del Menu Principal
-            GameObject manager = new GameObject("MainMenu_Manager");
-            manager.AddComponent<AudioManager>();
-            manager.AddComponent<MainMenuManager>();
-
-            EditorSceneManager.SaveScene(newScene, scenePath);
-            Debug.Log("[MainMenu] Escena MainMenu.unity creada exitosamente!");
-        }
-
-        // 2. Asegurar que las escenas esten registradas en EditorBuildSettings
+        // Asegurar que las escenas esten registradas en EditorBuildSettings
         List<EditorBuildSettingsScene> buildScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
 
-        bool hasMainMenu = false;
-        int mainMenuIdx = -1;
+        bool hasPantallaInicio = false;
+        int pantallaInicioIdx = -1;
 
         for (int i = 0; i < buildScenes.Count; i++)
         {
             if (buildScenes[i].path == scenePath)
             {
-                hasMainMenu = true;
-                mainMenuIdx = i;
+                hasPantallaInicio = true;
+                pantallaInicioIdx = i;
                 break;
             }
         }
 
-        if (!hasMainMenu)
+        if (!hasPantallaInicio)
         {
-            // Insertar al inicio como Escena 0
             buildScenes.Insert(0, new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = buildScenes.ToArray();
-            Debug.Log("[MainMenu] Escena MainMenu.unity registrada como Escena 0 en Build Settings!");
+            Debug.Log("[MainMenu] Escena Pantalla_Inicio.unity registrada como Escena 0 en Build Settings!");
         }
-        else if (mainMenuIdx != 0)
+        else if (pantallaInicioIdx != 0)
         {
-            // Mover al indice 0
-            var item = buildScenes[mainMenuIdx];
-            buildScenes.RemoveAt(mainMenuIdx);
+            var item = buildScenes[pantallaInicioIdx];
+            buildScenes.RemoveAt(pantallaInicioIdx);
             buildScenes.Insert(0, item);
             EditorBuildSettings.scenes = buildScenes.ToArray();
-            Debug.Log("[MainMenu] Escena MainMenu.unity reordenada como Escena 0 en Build Settings!");
-        }
-
-        // Asegurar que SampleScene este en la lista
-        string samplePath = "Assets/Scenes/SampleScene.unity";
-        bool hasSample = false;
-        foreach (var s in EditorBuildSettings.scenes)
-        {
-            if (s.path == samplePath) { hasSample = true; break; }
-        }
-        if (!hasSample && File.Exists(samplePath))
-        {
-            buildScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            buildScenes.Add(new EditorBuildSettingsScene(samplePath, true));
-            EditorBuildSettings.scenes = buildScenes.ToArray();
+            Debug.Log("[MainMenu] Escena Pantalla_Inicio.unity reordenada como Escena 0 en Build Settings!");
         }
     }
 }
