@@ -13,6 +13,10 @@ public class DialogueSystem : MonoBehaviour
 {
     public static DialogueSystem Instance { get; private set; }
 
+    // Eventos globales para integracion limpia con HUD y controles móviles
+    public static event System.Action OnDialogueStarted;
+    public static event System.Action OnDialogueEnded;
+
     [System.Serializable]
     public class DialogueLine
     {
@@ -36,6 +40,7 @@ public class DialogueSystem : MonoBehaviour
 
     private bool isTyping       = false;
     private bool skipRequested   = false;
+    private bool advanceRequested = false;
     private bool isActive       = false;
     private System.Action onDialogueComplete;
 
@@ -45,6 +50,25 @@ public class DialogueSystem : MonoBehaviour
         Instance = this;
     }
 
+    private void OnDisable()
+    {
+        if (isActive)
+        {
+            isActive = false;
+            OnDialogueEnded?.Invoke();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (isActive)
+        {
+            isActive = false;
+            OnDialogueEnded?.Invoke();
+        }
+        if (Instance == this) Instance = null;
+    }
+
     private void Start()
     {
         BuildDialogueUI();
@@ -52,6 +76,13 @@ public class DialogueSystem : MonoBehaviour
 
     private bool IsAdvancePressed()
     {
+        // 0. Toque directo registrado en UI o pantalla
+        if (advanceRequested)
+        {
+            advanceRequested = false;
+            return true;
+        }
+
         // 1. Teclado
         if (UnityEngine.InputSystem.Keyboard.current != null)
         {
@@ -66,6 +97,12 @@ public class DialogueSystem : MonoBehaviour
             var ts = UnityEngine.InputSystem.Touchscreen.current;
             if (ts.primaryTouch.press.wasPressedThisFrame)
                 return true;
+
+            for (int i = 0; i < ts.touches.Count; i++)
+            {
+                if (ts.touches[i].press.wasPressedThisFrame)
+                    return true;
+            }
         }
 
         // 3. Raton (Editor / PC)
@@ -120,6 +157,7 @@ public class DialogueSystem : MonoBehaviour
     private IEnumerator RunDialogueRoutine(List<DialogueLine> lines)
     {
         isActive = true;
+        OnDialogueStarted?.Invoke();
         Time.timeScale = 0f; // Pausar el juego durante el dialogo
 
         if (dialoguePanel != null) dialoguePanel.SetActive(true);
@@ -179,6 +217,7 @@ public class DialogueSystem : MonoBehaviour
         isActive = false;
         Time.timeScale = 1f;
 
+        OnDialogueEnded?.Invoke();
         onDialogueComplete?.Invoke();
     }
 
@@ -379,6 +418,7 @@ public class DialogueSystem : MonoBehaviour
         panelBtn.onClick.AddListener(() =>
         {
             if (isTyping) skipRequested = true;
+            else advanceRequested = true;
         });
 
         dialoguePanel.SetActive(false);

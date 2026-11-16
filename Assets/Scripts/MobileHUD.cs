@@ -46,7 +46,10 @@ public class MobileHUD : MonoBehaviour
     // ---- UI Canvas ----
     private Canvas hudCanvas;
     private RectTransform hudRoot;
+    private CanvasGroup hudCanvasGroup;
     private PauseManager pauseManager;
+    private Coroutine fadeHUDCoroutine;
+    private bool wasDialogueActive = false;
 
     // ---- Caché de Sprites Procedurales de Alta Resolución ----
     private static Sprite cachedCircleFilled;
@@ -89,9 +92,44 @@ public class MobileHUD : MonoBehaviour
         EnsureSpritesCached();
     }
 
+    private void OnEnable()
+    {
+        DialogueSystem.OnDialogueStarted += OnDialogueStarted;
+        DialogueSystem.OnDialogueEnded   += OnDialogueEnded;
+    }
+
+    private void OnDisable()
+    {
+        DialogueSystem.OnDialogueStarted -= OnDialogueStarted;
+        DialogueSystem.OnDialogueEnded   -= OnDialogueEnded;
+    }
+
+    private void OnDialogueStarted()
+    {
+        wasDialogueActive = true;
+        SetControlsVisible(false);
+    }
+
+    private void OnDialogueEnded()
+    {
+        wasDialogueActive = false;
+        SetControlsVisible(true);
+    }
+
     private void Start()
     {
         HandleSceneChange(SceneManager.GetActiveScene().name);
+    }
+
+    private void Update()
+    {
+        // Polling de respaldo en Update por si algún diálogo se activa sin evento
+        bool isDialogueActive = (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive);
+        if (isDialogueActive != wasDialogueActive)
+        {
+            wasDialogueActive = isDialogueActive;
+            SetControlsVisible(!isDialogueActive);
+        }
     }
 
     private void LateUpdate()
@@ -205,17 +243,120 @@ public class MobileHUD : MonoBehaviour
             }
         }
 
-        // 3. Raíz del HUD
-        hudRoot = new GameObject("HUD_Root", typeof(RectTransform)).GetComponent<RectTransform>();
+        // 3. Raíz del HUD con CanvasGroup para transiciones fluidas de visibilidad
+        hudRoot = new GameObject("HUD_Root", typeof(RectTransform), typeof(CanvasGroup)).GetComponent<RectTransform>();
         hudRoot.SetParent(hudCanvas.transform, false);
         hudRoot.anchorMin = Vector2.zero;
         hudRoot.anchorMax = Vector2.one;
         hudRoot.offsetMin = hudRoot.offsetMax = Vector2.zero;
 
+        hudCanvasGroup = hudRoot.GetComponent<CanvasGroup>();
+        hudCanvasGroup.alpha = 1f;
+        hudCanvasGroup.interactable = true;
+        hudCanvasGroup.blocksRaycasts = true;
+
         // Construir controles
         BuildModernJoystick();
         BuildModernDiamondCluster();
         BuildModernPauseButton();
+
+        // Si ya hay un diálogo activo al construirse el HUD (ej. IntroCutscene), ocultar de inmediato
+        bool isDialogueActive = (DialogueSystem.Instance != null && DialogueSystem.Instance.IsActive);
+        wasDialogueActive = isDialogueActive;
+        if (isDialogueActive)
+        {
+            SetControlsVisible(false, instant: true);
+        }
+    }
+
+    // ================================================================
+    //  CONTROL DE VISIBILIDAD DE CONTROLES (CINEMÁTICAS / DIÁLOGOS)
+    // ================================================================
+    public void SetControlsVisible(bool visible, bool instant = false)
+    {
+        if (hudRoot == null) return;
+
+        if (!visible)
+        {
+            // Resetear joystick y liberar cualquier comando continuo
+            MobileInputBridge.ResetContinuous();
+            var joy = hudRoot.GetComponentInChildren<ModernJoystickTrigger>(true);
+            if (joy != null) joy.ResetJoystick();
+        }
+
+        if (hudCanvasGroup == null)
+        {
+            hudCanvasGroup = hudRoot.GetComponent<CanvasGroup>();
+            if (hudCanvasGroup == null)
+            {
+                hudCanvasGroup = hudRoot.gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
+        if (fadeHUDCoroutine != null)
+        {
+            StopCoroutine(fadeHUDCoroutine);
+            fadeHUDCoroutine = null;
+        }
+
+        if (instant)
+        {
+            hudCanvasGroup.alpha = visible ? 1f : 0f;
+            hudCanvasGroup.blocksRaycasts = visible;
+            hudCanvasGroup.interactable = visible;
+            hudRoot.gameObject.SetActive(visible);
+        }
+        else
+        {
+            fadeHUDCoroutine = StartCoroutine(FadeHUD(visible));
+        }
+    }
+
+    private IEnumerator FadeHUD(bool show)
+    {
+        if (hudCanvasGroup == null || hudRoot == null) yield break;
+
+        float targetAlpha = show ? 1f : 0f;
+        float startAlpha = hudCanvasGroup.alpha;
+        float duration = show ? 0.20f : 0.12f;
+
+        if (show)
+        {
+            hudRoot.gameObject.SetActive(true);
+            hudCanvasGroup.blocksRaycasts = true;
+            hudCanvasGroup.interactable = true;
+        }
+        else
+        {
+            hudCanvasGroup.blocksRaycasts = false;
+            hudCanvasGroup.interactable = false;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            if (hudCanvasGroup != null)
+            {
+                hudCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
+            }
+            yield return null;
+        }
+
+        if (hudCanvasGroup != null)
+        {
+            hudCanvasGroup.alpha = targetAlpha;
+            hudCanvasGroup.blocksRaycasts = show;
+            hudCanvasGroup.interactable = show;
+        }
+
+        if (!show && hudRoot != null)
+        {
+            hudRoot.gameObject.SetActive(false);
+        }
+
+        fadeHUDCoroutine = null;
     }
 
     // ================================================================
@@ -872,6 +1013,24 @@ public class ModernButtonTrigger : MonoBehaviour, IPointerDownHandler, IPointerU
 
         if (animRoutine != null) StopCoroutine(animRoutine);
         animRoutine = StartCoroutine(AnimatePress(false));
+    }
+
+    private void OnDisable()
+    {
+        if (animRoutine != null)
+        {
+            StopCoroutine(animRoutine);
+            animRoutine = null;
+        }
+        if (transform.parent != null)
+        {
+            transform.parent.localScale = Vector3.one;
+        }
+        if (targetBg != null)
+        {
+            targetBg.color = normalColor;
+        }
+        onUpAction?.Invoke();
     }
 
     private IEnumerator AnimatePress(bool isDown)
