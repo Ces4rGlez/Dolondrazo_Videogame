@@ -895,7 +895,7 @@ public class MainMenuManager : MonoBehaviour
 
     private void MakeArcadeSimpleButton(Transform parent, Sprite white, Vector2 aPos, Vector2 size,
                                         string label, Color normalColor, Color hoverColor,
-                                        string name, UnityEngine.Events.UnityAction action)
+                                        string name, UnityEngine.Events.UnityAction action, int fontSize = 20)
     {
         GameObject btnObj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
         btnObj.transform.SetParent(parent, false);
@@ -922,7 +922,7 @@ public class MainMenuManager : MonoBehaviour
         MakeText(btnObj.transform, label,
                  Vector2.zero, Vector2.one, new Vector2(0.5f,0.5f),
                  Vector2.zero, Vector2.zero,
-                 20, FontStyle.Bold, TextAnchor.MiddleCenter,
+                 fontSize, FontStyle.Bold, TextAnchor.MiddleCenter,
                  Color.white, "Btn_Label");
     }
 
@@ -981,8 +981,8 @@ public class MainMenuManager : MonoBehaviour
                  new Color(1f, 0.88f, 0.2f, 1f), "Modal_Level_Title");
 
         int maxUnlocked = GameSaveManager.GetMaxUnlockedLevel();
-        float startY = -85f;
-        float gapY = 88f;
+        float startY = -88f;
+        float gapY = 104f;
 
         // Nivel 1
         MakeLevelCard(levelSelectModal.transform, white, 1, "NIVEL 1: CALZADA DE LOS HEROES",
@@ -1008,14 +1008,14 @@ public class MainMenuManager : MonoBehaviour
                           LevelTransitionLoader.LoadLevel("Nivel_3_CBTIS75", "NIVEL 3: CBTIS 75", "¡Derrota al Director antes de que pase el camion!");
                       });
 
-        // Botones Inferiores: Nueva Aventura y Regresar (posicionados mas arriba a -368f)
-        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(-155f, -368f), new Vector2(260f, 52f),
+        // Botones Inferiores: Nueva Aventura y Regresar (posicionados mas arriba a -405f)
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(-155f, -405f), new Vector2(260f, 52f),
                                "+ NUEVA AVENTURA",
                                new Color(0.12f, 0.45f, 0.22f, 1f),
                                new Color(0.2f, 0.75f, 0.35f, 1f),
                                "Btn_NewGameModal", StartNewAdventure);
 
-        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(155f, -368f), new Vector2(260f, 52f),
+        MakeArcadeSimpleButton(levelSelectModal.transform, white, new Vector2(155f, -405f), new Vector2(260f, 52f),
                                "<< REGRESAR",
                                new Color(0.25f, 0.28f, 0.38f, 1f),
                                new Color(0.4f, 0.45f, 0.6f, 1f),
@@ -1032,7 +1032,7 @@ public class MainMenuManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 1f); rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = new Vector2(0f, yPos);
-        rt.sizeDelta = new Vector2(740f, 76f);
+        rt.sizeDelta = new Vector2(740f, 96f);
 
         Image img = row.GetComponent<Image>();
         img.sprite = white;
@@ -1046,31 +1046,31 @@ public class MainMenuManager : MonoBehaviour
         // Titulo
         MakeText(row.transform, isUnlocked ? title : $"[ BLOQUEADO ]  {title}",
                  new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f),
-                 new Vector2(24f, -10f), new Vector2(-220f, 32f),
+                 new Vector2(24f, -12f), new Vector2(-240f, 40f),
                  19, FontStyle.Bold, TextAnchor.MiddleLeft,
                  isUnlocked ? new Color(1f, 0.9f, 0.2f, 1f) : new Color(0.6f, 0.6f, 0.6f, 0.8f), "TitleText");
 
         // Descripcion
         MakeText(row.transform, desc,
                  new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0f, 0.5f),
-                 new Vector2(24f, -16f), new Vector2(-220f, -32f),
+                 new Vector2(24f, -18f), new Vector2(-240f, -38f),
                  14, FontStyle.Italic, TextAnchor.MiddleLeft,
                  isUnlocked ? new Color(0.7f, 0.85f, 1f, 0.85f) : new Color(0.5f, 0.5f, 0.5f, 0.6f), "DescText");
 
         if (isUnlocked)
         {
-            MakeArcadeSimpleButton(row.transform, white, new Vector2(270f, -38f), new Vector2(160f, 44f),
+            MakeArcadeSimpleButton(row.transform, white, new Vector2(272f, -48f), new Vector2(200f, 68f),
                                    "JUGAR >>",
                                    new Color(0.15f, 0.65f, 0.35f, 1f),
                                    new Color(0.25f, 0.85f, 0.45f, 1f),
-                                   $"Btn_Play_{levelNum}", onPlay);
+                                   $"Btn_Play_{levelNum}", onPlay, 26);
         }
         else
         {
             MakeText(row.transform, "BLOQUEADO",
                      new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                     new Vector2(-30f, 0f), new Vector2(140f, 36f),
-                     15, FontStyle.Bold, TextAnchor.MiddleCenter,
+                     new Vector2(-30f, 0f), new Vector2(140f, 44f),
+                     16, FontStyle.Bold, TextAnchor.MiddleCenter,
                      new Color(0.6f, 0.3f, 0.3f, 0.9f), "LockedText");
         }
     }
